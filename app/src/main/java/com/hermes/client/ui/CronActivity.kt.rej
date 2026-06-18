@@ -1,0 +1,13 @@
+--- a/app/src/main/java/com/hermes/client/ui/Activity.kt
++++ b/app/src/main/java/com/hermes/client/ui/Activity.kt
+@@ -40,10 +40,6 @@
+             // Other setup
+         }
+ 
+-        binding.swipeRefresh.setOnRefreshListener {
+-            // Refresh logic
+-            binding.swipeRefresh.isRefreshing = false
+-        }
+     }
+ 
+ 
