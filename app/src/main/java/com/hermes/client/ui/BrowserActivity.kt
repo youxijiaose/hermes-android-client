@@ -1,5 +1,7 @@
 package com.hermes.client.ui
 
+import android.content.DialogInterface
+import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
@@ -12,8 +14,8 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import android.content.DialogInterface
 import androidx.appcompat.app.AlertDialog
+import com.hermes.client.R
 import com.hermes.client.databinding.ActivityBrowserBinding
 
 class BrowserActivity : AppCompatActivity() {
@@ -81,7 +83,7 @@ class BrowserActivity : AppCompatActivity() {
             view: WebView?,
             url: String?,
             message: String?,
-            result: JsConfirmResult?
+            result: JsResult?
         ): Boolean {
             AlertDialog.Builder(this@BrowserActivity)
                 .setMessage(message)
@@ -97,7 +99,7 @@ class BrowserActivity : AppCompatActivity() {
             url: String?,
             message: String?,
             defaultValue: String?,
-            result: JsPromptResult?
+            result: JsResult?
         ): Boolean {
             val input = android.widget.EditText(this@BrowserActivity).apply {
                 setText(defaultValue)
@@ -134,6 +136,11 @@ class BrowserActivity : AppCompatActivity() {
 
     companion object {
         private const val FILE_CHOOSER_REQUEST = 100
+        private const val MENU_DOWNLOAD_IMAGE = 1
+        private const val MENU_OPEN_IMAGE = 2
+        private const val MENU_OPEN_LINK = 3
+        private const val MENU_COPY_LINK = 4
+        const val EXTRA_URL = "extra_url"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -181,14 +188,6 @@ class BrowserActivity : AppCompatActivity() {
             
             // Add JavaScript interface for Hermes integration
             addJavascriptInterface(HermesWebInterface(this@BrowserActivity), "Hermes")
-            
-            // Prevent external links from opening in external browser
-            webViewClient = object : WebViewClient() {
-                override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
-                    // Let WebView handle the URL
-                    return false
-                }
-            }
         }
     }
 
@@ -451,13 +450,5 @@ class BrowserActivity : AppCompatActivity() {
         fun canGoForward(): Boolean {
             return activity.binding.webView.canGoForward()
         }
-    }
-
-    companion object {
-        private const val MENU_DOWNLOAD_IMAGE = 1
-        private const val MENU_OPEN_IMAGE = 2
-        private const val MENU_OPEN_LINK = 3
-        private const val MENU_COPY_LINK = 4
-        const val EXTRA_URL = "extra_url"
     }
 }
