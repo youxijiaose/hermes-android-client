@@ -229,10 +229,8 @@ class BrowserActivity : AppCompatActivity() {
             binding.webView.stopLoading()
         }
 
-        binding.swipeRefresh.setOnRefreshListener {
-            binding.webView.reload()
-            binding.swipeRefresh.isRefreshing = false
-        }
+        // Swipe-to-refresh disabled due to missing dependency
+        
 
         // Context menu for long press
         binding.webView.setOnCreateContextMenuListener { menu, v, menuInfo ->
