@@ -41,10 +41,6 @@ class CronActivity : AppCompatActivity() {
             showCreateDialog()
         }
 
-        binding.swipeRefresh.setOnRefreshListener {
-            viewModel.refresh()
-            binding.swipeRefresh.isRefreshing = false
-        }
 
         viewModel.cronJobs.observe(this) { jobs ->
             adapter.submitList(jobs)

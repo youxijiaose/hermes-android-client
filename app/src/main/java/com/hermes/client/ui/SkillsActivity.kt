@@ -70,10 +70,6 @@ class SkillsActivity : AppCompatActivity() {
             }
         }
 
-        binding.swipeRefresh.setOnRefreshListener {
-            viewModel.refresh()
-            binding.swipeRefresh.isRefreshing = false
-        }
 
         viewModel.skills.observe(this) { skills ->
             adapter.submitList(skills)

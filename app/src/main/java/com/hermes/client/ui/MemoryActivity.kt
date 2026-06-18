@@ -70,10 +70,6 @@ class MemoryActivity : AppCompatActivity() {
             showCreateDialog()
         }
 
-        binding.swipeRefresh.setOnRefreshListener {
-            viewModel.refresh()
-            binding.swipeRefresh.isRefreshing = false
-        }
 
         viewModel.memoryEntries.observe(this) { entries ->
             adapter.submitList(entries)
