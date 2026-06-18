@@ -45,15 +45,14 @@ class MemoryActivity : AppCompatActivity() {
         // Search functionality
         binding.searchView.setOnQueryTextListener(object : android.widget.SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean {
+                viewModel.searchMemory(query ?: "")
                 return true
             }
             override fun onQueryTextChange(newText: String?): Boolean {
+                viewModel.searchMemory(newText ?: "")
                 return true
             }
         })
-            viewModel.searchMemory(query ?: "")
-            true
-        }
 
         // Target switcher
         binding.btnUserTarget.setOnClickListener {
