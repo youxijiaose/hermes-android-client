@@ -102,3 +102,15 @@ class MarkdownRenderer {
         }
     }
 }
+
+/**
+ * TextView 扩展函数：设置 Markdown 渲染后的文本
+ * 使用方式：textView.setMarkdown("Hello **world**")
+ */
+fun TextView.setMarkdown(text: String) {
+    if (text.isBlank()) {
+        this.text = ""
+    } else {
+        MarkdownRenderer.renderMarkdown(text, this)
+    }
+}

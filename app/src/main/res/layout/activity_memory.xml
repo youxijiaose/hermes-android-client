@@ -71,15 +71,10 @@
             android:textColor="@color/black"
             android:visibility="gone" />
 
-        <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-            android:id="@+id/swipeRefresh"
+        <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1">
-
-            <FrameLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent">
 
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/recyclerMemory"
@@ -107,7 +102,7 @@
 
             </FrameLayout>
 
-        </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+        </FrameLayout>
 
     </LinearLayout>
 

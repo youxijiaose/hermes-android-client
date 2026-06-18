@@ -79,7 +79,7 @@ class MemoryActivity : AppCompatActivity() {
         viewModel.memoryStats.observe(this) { stats ->
             stats?.let {
                 binding.statsView.visibility = View.VISIBLE
-                binding.textStats.text = "Total: ${it.total_entries} entries | User: ${it.user_entries} | Memory: ${it.memory_entries} | Chars: ${it.total_chars}"
+                binding.statsView.text = "Total: ${it.total_entries} entries | User: ${it.user_entries} | Memory: ${it.memory_entries} | Chars: ${it.total_chars}"
             } ?: run {
                 binding.statsView.visibility = View.GONE
             }
