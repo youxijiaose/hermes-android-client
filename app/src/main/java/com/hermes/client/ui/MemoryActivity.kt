@@ -14,6 +14,7 @@ import com.hermes.client.adapter.MemoryAdapter
 import com.hermes.client.databinding.ActivityMemoryBinding
 import com.hermes.client.model.MemoryEntry
 import com.hermes.client.viewmodel.MemoryViewModel
+import android.widget.SearchView
 
 class MemoryActivity : AppCompatActivity() {
 

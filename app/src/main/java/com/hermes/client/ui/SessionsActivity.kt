@@ -10,6 +10,7 @@ import com.hermes.client.R
 import com.hermes.client.adapter.SessionAdapter
 import com.hermes.client.databinding.ActivitySessionsBinding
 import com.hermes.client.viewmodel.SessionsViewModel
+import android.widget.SearchView
 
 class SessionsActivity : AppCompatActivity() {
 
