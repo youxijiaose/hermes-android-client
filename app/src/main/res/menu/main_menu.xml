@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/action_clear"
+        android:icon="@android:drawable/ic_menu_delete"
+        android:title="@string/clear_chat"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/action_memory"
+        android:icon="@android:drawable/ic_menu_manage"
+        android:title="Memory"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_skills"
+        android:icon="@android:drawable/ic_menu_sort_by_size"
+        android:title="Skills"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_cron"
+        android:icon="@android:drawable/ic_menu_agenda"
+        android:title="Cron Jobs"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_settings"
+        android:icon="@android:drawable/ic_menu_preferences"
+        android:title="@string/settings"
+        app:showAsAction="never" />
+
+</menu>
