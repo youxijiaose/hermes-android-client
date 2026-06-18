@@ -5,7 +5,15 @@
     android:layout_height="match_parent"
     android:padding="16dp">
 
-    <LinearLayout
+            <androidx.appcompat.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:background="?attr/colorPrimary"
+            android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
+            app:popupTheme="@style/ThemeOverlay.AppCompat.Light" />
+
+<LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical">
@@ -70,6 +78,21 @@
             android:text="Save Settings"
             app:backgroundTint="@color/primary" />
 
-    </LinearLayout>
+            <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnAbout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="About" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnClearData"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Clear All Data"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+
+</LinearLayout>
 
 </ScrollView>

@@ -38,17 +38,10 @@ class SessionsActivity : AppCompatActivity() {
         }
 
         // Search functionality
-        binding.searchView.setOnQueryTextListener(object : android.widget.SearchView.OnQueryTextListener {
-            override fun onQueryTextSubmit(query: String?): Boolean {
-                viewModel.searchSessions(query ?: "")
-                return true
-            }
-
-            override fun onQueryTextChange(newText: String?): Boolean {
-                viewModel.searchSessions(newText ?: "")
-                return true
-            }
-        })
+        binding.searchView.setOnQueryTextListener { query ->
+            viewModel.searchSessions(query ?: "")
+            true
+        }
 
         binding.fabNewSession.setOnClickListener {
             viewModel.createNewSession()
