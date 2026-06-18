@@ -14,8 +14,8 @@ class MarkdownRenderer {
 
     companion object {
         // Regex patterns for Markdown
-        private val CODE_BLOCK_PATTERN = Pattern.compile("\x60\x60\x60(\\w*)\\n([\\s\\S]*?)\\x60\x60\x60")
-        private val INLINE_CODE_PATTERN = Pattern.compile("\x60([^\x60]+)\x60")
+        private val CODE_BLOCK_PATTERN = Pattern.compile("```(\\w*)\\n([\\s\\S]*?)\```")
+        private val INLINE_CODE_PATTERN = Pattern.compile("`([^`]+)`")
         private val BOLD_PATTERN = Pattern.compile("\*\*([^*]+)\*\*")
         private val ITALIC_PATTERN = Pattern.compile("\*([^*]+)\*")
         private val LINK_PATTERN = Pattern.compile("\[([^\\]]+)\]\(([^\\)]+)\)")
@@ -34,14 +34,14 @@ class MarkdownRenderer {
             var result = text
 
             // 1. 代码块
-            result = result.replace(Regex("\x60\x60\x60(\\w*)\\n([\\s\\S]*?)\\x60\x60\x60")) { match ->
+            result = result.replace(Regex("```(\\w*)\\n([\\s\\S]*?)\```")) { match ->
                 val language = match.groupValues[1]
                 val code = match.groupValues[2].trim()
                 "<pre><code class=\"language-$language\">${escapeHtml(code)}</code></pre>"
             }
 
             // 2. 行内代码
-            result = result.replace(Regex("\x60([^\x60]+)\x60")) { match ->
+            result = result.replace(Regex("`([^`]+)`")) { match ->
                 "<code>${escapeHtml(match.groupValues[1])}</code>"
             }
 

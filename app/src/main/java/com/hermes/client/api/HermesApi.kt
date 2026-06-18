@@ -686,6 +686,19 @@ class HermesApi(private val baseUrl: String, private val apiKey: String) {
             Result.failure(e)
         }
     }
+
+    companion object {
+        @Volatile private var serverUrl: String = "http://192.168.1.100:8080"
+        @Volatile private var apiKey: String = ""
+        
+        fun setup(url: String, key: String) {
+            serverUrl = url
+            apiKey = key
+        }
+        
+        fun getServerUrl(): String = serverUrl
+        fun getApiKey(): String = apiKey
+    }
 }
 
 // WebSocket listener interface
@@ -710,16 +723,5 @@ object GsonSerializer {
     }
 
 
-    companion object {
-        private var serverUrl: String = "http://192.168.1.100:8080"
-        private var apiKey: String = ""
-        
-        fun setup(url: String, key: String) {
-            serverUrl = url
-            apiKey = key
-        }
-        
-        fun getServerUrl(): String = serverUrl
-        fun getApiKey(): String = apiKey
-    }
+
 }
