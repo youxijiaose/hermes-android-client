@@ -37,7 +37,7 @@ class MarkdownRenderer {
             result = result.replace(Regex("\x60\x60\x60(\\w*)\\n([\\s\\S]*?)\\x60\x60\x60")) { match ->
                 val language = match.groupValues[1]
                 val code = match.groupValues[2].trim()
-                "<pre><code class="language-$language">${escapeHtml(code)}</code></pre>"
+                "<pre><code class=\"language-$language\">${escapeHtml(code)}</code></pre>"
             }
 
             // 2. 行内代码
@@ -57,7 +57,7 @@ class MarkdownRenderer {
 
             // 5. 链接
             result = result.replace(Regex("\[([^\\]]+)\]\(([^\\)]+)\)")) { match ->
-                "<a href="${match.groupValues[2]}">${match.groupValues[1]}</a>"
+                "<a href=\"${match.groupValues[2]}\">${match.groupValues[1]}</a>"
             }
 
             // 6. 标题

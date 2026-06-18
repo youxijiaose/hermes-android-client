@@ -43,7 +43,7 @@ class MemoryActivity : AppCompatActivity() {
         }
 
         // Search functionality
-        binding.searchView.setOnQueryTextListener { query ->
+        binding.searchView.setOnQueryTextListener { query: String? ->
             viewModel.searchMemory(query ?: "")
             true
         }

@@ -708,4 +708,18 @@ object GsonSerializer {
     fun <T> toJson(obj: T): String {
         return gson.toJson(obj)
     }
+
+
+    companion object {
+        private var serverUrl: String = "http://192.168.1.100:8080"
+        private var apiKey: String = ""
+        
+        fun setup(url: String, key: String) {
+            serverUrl = url
+            apiKey = key
+        }
+        
+        fun getServerUrl(): String = serverUrl
+        fun getApiKey(): String = apiKey
+    }
 }

@@ -38,7 +38,7 @@ class SessionsActivity : AppCompatActivity() {
         }
 
         // Search functionality
-        binding.searchView.setOnQueryTextListener { query ->
+        binding.searchView.setOnQueryTextListener { query: String? ->
             viewModel.searchSessions(query ?: "")
             true
         }

@@ -44,7 +44,7 @@ class SkillsActivity : AppCompatActivity() {
         }
 
         // Search functionality
-        binding.searchView.setOnQueryTextListener { query ->
+        binding.searchView.setOnQueryTextListener { query: String? ->
             viewModel.searchSkills(query ?: "")
             true
         }
