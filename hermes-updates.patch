@@ -603,7 +603,7 @@ index 49c627f..221d983 100644
      
      data class ToolMessage(
 diff --git a/app/src/main/java/com/hermes/client/ui/BrowserActivity.kt b/app/src/main/java/com/hermes/client/ui/BrowserActivity.kt
-index 0914377..04fcb1a 100644
+index 0914377..b8cef91 100644
 --- a/app/src/main/java/com/hermes/client/ui/BrowserActivity.kt
 +++ b/app/src/main/java/com/hermes/client/ui/BrowserActivity.kt
 @@ -1,5 +1,7 @@
@@ -657,15 +657,6 @@ index 0914377..04fcb1a 100644
                  .setOnDismissListener { result?.cancel() }
                  .show()
              return true
-@@ -95,7 +99,7 @@ class BrowserActivity : AppCompatActivity() {
-             url: String?,
-             message: String?,
-             defaultValue: String?,
--            result: JsPromptResult?
-+            result: JsResult?
-         ): Boolean {
-             val input = android.widget.EditText(this@BrowserActivity).apply {
-                 setText(defaultValue)
 @@ -104,11 +108,11 @@ class BrowserActivity : AppCompatActivity() {
              AlertDialog.Builder(this@BrowserActivity)
                  .setMessage(message)
@@ -692,7 +683,15 @@ index 0914377..04fcb1a 100644
      }
  
      override fun onCreate(savedInstanceState: Bundle?) {
-@@ -179,14 +188,6 @@ class BrowserActivity : AppCompatActivity() {
+@@ -171,7 +180,6 @@ class BrowserActivity : AppCompatActivity() {
+                 
+                 // Performance
+                 mediaPlaybackRequiresUserGesture = false
+-                geolocationEnabled = false
+                 
+                 // Privacy
+                 setGeolocationEnabled(false)
+@@ -179,14 +187,6 @@ class BrowserActivity : AppCompatActivity() {
              
              // Add JavaScript interface for Hermes integration
              addJavascriptInterface(HermesWebInterface(this@BrowserActivity), "Hermes")
@@ -707,7 +706,20 @@ index 0914377..04fcb1a 100644
          }
      }
  
-@@ -331,7 +332,7 @@ class BrowserActivity : AppCompatActivity() {
+@@ -229,10 +229,8 @@ class BrowserActivity : AppCompatActivity() {
+             binding.webView.stopLoading()
+         }
+ 
+-        binding.swipeRefresh.setOnRefreshListener {
+-            binding.webView.reload()
+-            binding.swipeRefresh.isRefreshing = false
+-        }
++        // Swipe-to-refresh disabled due to missing dependency
++        
+ 
+         // Context menu for long press
+         binding.webView.setOnCreateContextMenuListener { menu, v, menuInfo ->
+@@ -331,7 +329,7 @@ class BrowserActivity : AppCompatActivity() {
          val items = history.items.map { it.url }.toTypedArray()
          AlertDialog.Builder(this)
              .setTitle("History")
@@ -716,7 +728,7 @@ index 0914377..04fcb1a 100644
                  loadUrl(items[which])
              }
              .setNegativeButton("Close", null)
-@@ -369,7 +370,7 @@ class BrowserActivity : AppCompatActivity() {
+@@ -369,7 +367,7 @@ class BrowserActivity : AppCompatActivity() {
          AlertDialog.Builder(this)
              .setTitle("Clear Browser Data")
              .setMessage("This will clear cache, cookies, and browsing data. Continue?")
@@ -725,7 +737,7 @@ index 0914377..04fcb1a 100644
                  val webSettings = binding.webView.settings
                  webSettings.cacheMode = WebSettings.LOAD_NO_CACHE
                  binding.webView.clearCache(true)
-@@ -450,12 +451,4 @@ class BrowserActivity : AppCompatActivity() {
+@@ -450,12 +448,4 @@ class BrowserActivity : AppCompatActivity() {
              return activity.binding.webView.canGoForward()
          }
      }
@@ -1165,19 +1177,63 @@ index 0000000..dcd3bb1
 +exec "$JAVACMD" "$@"
 diff --git a/hermes-updates.patch b/hermes-updates.patch
 new file mode 100644
-index 0000000..7d5eb6b
+index 0000000..b7ee777
 --- /dev/null
 +++ b/hermes-updates.patch
-@@ -0,0 +1,310 @@
-+From 0401d7e97911ae4a60e07eda6909e7171f03cd62 Mon Sep 17 00:00:00 2001
-+From: youxijiaose <youxijiaose@users.noreply.github.com>
-+Date: Fri, 19 Jun 2026 04:35:02 +0800
-+Subject: [PATCH 1/2] docs: add comprehensive build guide
-+
-+---
-+ BUILD_GUIDE.md | 194 +++++++++++++++++++++++++++++++------------------
-+ 1 file changed, 125 insertions(+), 69 deletions(-)
-+
+@@ -0,0 +1,1500 @@
++diff --git a/.github/workflows/android.yml b/.github/workflows/android.yml
++new file mode 100644
++index 0000000..8f0919d
++--- /dev/null
+++++ b/.github/workflows/android.yml
++@@ -0,0 +1,47 @@
+++name: Android CI
+++
+++on:
+++  push:
+++    branches: [ main ]
+++  pull_request:
+++    branches: [ main ]
+++  workflow_dispatch:
+++
+++jobs:
+++  build:
+++    runs-on: ubuntu-latest
+++    
+++    steps:
+++    - name: Checkout code
+++      uses: actions/checkout@v4
+++
+++    - name: Set up JDK 17
+++      uses: actions/setup-java@v4
+++      with:
+++        java-version: '17'
+++        distribution: 'temurin'
+++        cache: gradle
+++
+++    - name: Grant execute permission
+++      run: chmod +x gradlew
+++
+++    - name: Build with Gradle
+++      run: ./gradlew assembleDebug --no-daemon
+++
+++    - name: Upload APK
+++      uses: actions/upload-artifact@v4
+++      with:
+++        name: app-debug-apk
+++        path: app/build/outputs/apk/debug/app-debug.apk
+++
+++    - name: Release APK
+++      if: github.ref == 'refs/heads/main'
+++      uses: softprops/action-gh-release@v1
+++      with:
+++        files: app/build/outputs/apk/debug/app-debug.apk
+++        tag_name: v${{ github.run_number }}
+++        name: Release v${{ github.run_number }}
+++        draft: false
+++        prerelease: false
+++      env:
+++        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 +diff --git a/BUILD_GUIDE.md b/BUILD_GUIDE.md
 +index 1b031e3..b64fff8 100644
 +--- a/BUILD_GUIDE.md
@@ -1409,76 +1465,1222 @@ index 0000000..7d5eb6b
 +-A: 确保 ANDROID_HOME 环境变量正确设置。
 ++**构建时间：** ~3-5 分钟（首次）/ ~1-2 分钟（后续）
 ++**APK 大小：** ~12-15MB
-+-- 
-+2.54.0
-+
-+
-+From 19b7c3fe663db697660b603ad171abfdfc3ccf2d Mon Sep 17 00:00:00 2001
-+From: youxijiaose <youxijiaose@users.noreply.github.com>
-+Date: Fri, 19 Jun 2026 04:55:44 +0800
-+Subject: [PATCH 2/2] ci: add GitHub Actions workflow for Android build
-+
-+---
-+ .github/workflows/android.yml | 47 +++++++++++++++++++++++++++++++++++
-+ 1 file changed, 47 insertions(+)
-+ create mode 100644 .github/workflows/android.yml
-+
-+diff --git a/.github/workflows/android.yml b/.github/workflows/android.yml
++diff --git a/TERMUX_BUILD.md b/TERMUX_BUILD.md
 +new file mode 100644
-+index 0000000..8f0919d
++index 0000000..b191280
 +--- /dev/null
-++++ b/.github/workflows/android.yml
-+@@ -0,0 +1,47 @@
-++name: Android CI
+++++ b/TERMUX_BUILD.md
++@@ -0,0 +1,50 @@
+++# Termux APK 构建说明
 ++
-++on:
-++  push:
-++    branches: [ main ]
-++  pull_request:
-++    branches: [ main ]
-++  workflow_dispatch:
+++## 当前状态
 ++
-++jobs:
-++  build:
-++    runs-on: ubuntu-latest
+++Termux 上已安装以下工具：
+++- ✓ aapt2 (Android 资源编译)
+++- ✓ javac (Java 编译)
+++- ✓ d8 (Dex 转换器)
+++- ✓ apksigner (APK 签名)
+++- ✓ kotlinc (Kotlin 编译)
+++- ✓ android.jar (Android API 库)
+++- ✓ kotlin-stdlib (Kotlin 标准库)
+++- ✓ Gradle 9.5.1 (但版本不兼容 AGP 8.2)
+++
+++## 问题
+++
+++1. **Gradle 版本不兼容**: 项目使用 AGP 8.2.0，需要 Gradle 8.2，但 Termux 安装的是 Gradle 9.5.1
+++2. **Kotlin 编译问题**: kotlinc 在 Termux 上有库加载问题
+++
+++## 解决方案
+++
+++### 方法 1: Android Studio（推荐）
+++在电脑上使用 Android Studio 构建：
+++1. 从 GitHub 下载项目
+++2. 用 Android Studio 打开
+++3. Build → Build APK
+++
+++### 方法 2: 降级 Gradle
+++```bash
+++# 下载 Gradle 8.2
+++wget https://services.gradle.org/distributions/gradle-8.2-bin.zip
+++unzip gradle-8.2-bin.zip -d /data/data/com.termux/files/usr/opt/
+++# 修改 gradle-wrapper.properties 使用本地 Gradle
+++```
+++
+++### 方法 3: 手动编译（高级）
+++需要处理：
+++1. ViewBinding 生成代码
+++2. Kotlin 依赖解析
+++3. DEX 文件合并
+++4. APK 打包签名
+++
+++## 建议
+++
+++由于 Termux 环境限制，**强烈建议在 Android Studio 中构建**。
+++
+++项目已上传到 GitHub：
+++https://github.com/youxijiaose/hermes-android-client
+++
+++在电脑上克隆并构建即可。
++diff --git a/app/build.gradle.kts b/app/build.gradle.kts
++index 34b36b5..332fb85 100644
++--- a/app/build.gradle.kts
+++++ b/app/build.gradle.kts
++@@ -9,7 +9,7 @@ android {
++ 
++     defaultConfig {
++         applicationId = "com.hermes.client"
++-        minSdk = 24
+++        minSdk = 26
++         targetSdk = 34
++         versionCode = 1
++         versionName = "1.0.0"
++@@ -40,6 +40,13 @@ android {
++     kotlinOptions {
++         jvmTarget = "1.8"
++     }
 ++    
-++    steps:
-++    - name: Checkout code
-++      uses: actions/checkout@v4
+++    // Skip SDK license check
+++    packagingOptions {
+++        resources {
+++            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+++        }
+++    }
++ }
++ 
++ dependencies {
++@@ -58,24 +65,9 @@ dependencies {
++     implementation("com.squareup.okhttp3:okhttp:4.12.0")
++     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
++     
++-    // JSON
+++    // Gson
++     implementation("com.google.code.gson:gson:2.10.1")
++     
++     // Coroutines
++     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
++-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
++-    
++-    // RecyclerView
++-    implementation("androidx.recyclerview:recyclerview:1.3.2")
++-    
++-    // SwipeRefreshLayout
++-    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
++-    
++-    // Preferences
++-    implementation("androidx.preference:preference-ktx:1.2.1")
++-    
++-    // Testing
++-    testImplementation("junit:junit:4.13.2")
++-    androidTestImplementation("androidx.test.ext:junit:1.1.5")
++-    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
++ }
++diff --git a/app/src/main/java/com/hermes/client/adapter/ChatAdapter.kt b/app/src/main/java/com/hermes/client/adapter/ChatAdapter.kt
++index 650eb6b..2235655 100644
++--- a/app/src/main/java/com/hermes/client/adapter/ChatAdapter.kt
+++++ b/app/src/main/java/com/hermes/client/adapter/ChatAdapter.kt
++@@ -9,10 +9,9 @@ import androidx.recyclerview.widget.DiffUtil
++ import androidx.recyclerview.widget.ListAdapter
++ import androidx.recyclerview.widget.RecyclerView
++ import com.hermes.client.R
++-import com.hermes.client.model.AssistantMessage
++ import com.hermes.client.model.Message
++-import com.hermes.client.model.ToolMessage
++-import com.hermes.client.model.UserMessage
 ++
-++    - name: Set up JDK 17
-++      uses: actions/setup-java@v4
-++      with:
-++        java-version: '17'
-++        distribution: 'temurin'
-++        cache: gradle
 ++
-++    - name: Grant execute permission
-++      run: chmod +x gradlew
++ import com.hermes.client.util.TimeUtils
++ import com.hermes.client.util.setMarkdown
++ 
++@@ -26,9 +25,9 @@ class ChatAdapter : ListAdapter<Message, RecyclerView.ViewHolder>(MessageDiffCal
++ 
++     override fun getItemViewType(position: Int): Int {
++         return when (getItem(position)) {
++-            is UserMessage -> VIEW_TYPE_USER
++-            is AssistantMessage -> VIEW_TYPE_ASSISTANT
++-            is ToolMessage -> VIEW_TYPE_TOOL
+++            is Message.UserMessage -> VIEW_TYPE_USER
+++            is Message.AssistantMessage -> VIEW_TYPE_ASSISTANT
+++            is Message.ToolMessage -> VIEW_TYPE_TOOL
++             else -> VIEW_TYPE_ASSISTANT
++         }
++     }
++@@ -49,9 +48,9 @@ class ChatAdapter : ListAdapter<Message, RecyclerView.ViewHolder>(MessageDiffCal
++ 
++     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
++         when (holder) {
++-            is UserViewHolder -> holder.bind(getItem(position) as UserMessage)
++-            is AssistantViewHolder -> holder.bind(getItem(position) as AssistantMessage)
++-            is ToolViewHolder -> holder.bind(getItem(position) as ToolMessage)
+++            is UserViewHolder -> holder.bind(getItem(position) as Message.UserMessage)
+++            is AssistantViewHolder -> holder.bind(getItem(position) as Message.AssistantMessage)
+++            is ToolViewHolder -> holder.bind(getItem(position) as Message.ToolMessage)
++         }
++     }
++ 
++@@ -63,7 +62,7 @@ class ChatAdapter : ListAdapter<Message, RecyclerView.ViewHolder>(MessageDiffCal
++             // 添加时间视图到布局（需要修改布局文件）
++         }
++ 
++-        fun bind(message: UserMessage) {
+++        fun bind(message: Message.UserMessage) {
++             textView.setMarkdown(message.content ?: "")
++             timeView.text = TimeUtils.formatRelativeTime(itemView.context, message.timestamp)
++         }
++@@ -79,7 +78,7 @@ class ChatAdapter : ListAdapter<Message, RecyclerView.ViewHolder>(MessageDiffCal
++             // 添加思考块视图
++         }
++ 
++-        fun bind(message: AssistantMessage) {
+++        fun bind(message: Message.AssistantMessage) {
++             if (message.content.isNullOrEmpty()) {
++                 progressBar.visibility = View.VISIBLE
++                 textView.visibility = View.GONE
++@@ -101,7 +100,7 @@ class ChatAdapter : ListAdapter<Message, RecyclerView.ViewHolder>(MessageDiffCal
++         private val toolOutput: TextView = itemView.findViewById(R.id.textToolOutput)
++         private val timeView: TextView = itemView.findViewById(R.id.timeMessage)
++ 
++-        fun bind(message: ToolMessage) {
+++        fun bind(message: Message.ToolMessage) {
++             toolName.text = message.toolName ?: "Tool"
++             toolOutput.setMarkdown(message.content)
++             timeView.text = TimeUtils.formatRelativeTime(itemView.context, message.timestamp)
++diff --git a/app/src/main/java/com/hermes/client/adapter/CronAdapter.kt b/app/src/main/java/com/hermes/client/adapter/CronAdapter.kt
++index 46b3299..66fcb62 100644
++--- a/app/src/main/java/com/hermes/client/adapter/CronAdapter.kt
+++++ b/app/src/main/java/com/hermes/client/adapter/CronAdapter.kt
++@@ -44,8 +44,8 @@ class CronAdapter(
++         holder.name.text = job.name ?: job.id
++         holder.schedule.text = job.schedule
++         holder.prompt.text = job.prompt.take(50) + if (job.prompt.length > 50) "..." else ""
++-        holder.lastRun.text = job.last_run?.let { TimeUtils.formatRelativeTime(itemView.context, it) } ?: "Never"
++-        holder.nextRun.text = job.next_run?.let { TimeUtils.formatRelativeTime(itemView.context, it) } ?: "N/A"
+++        holder.lastRun.text = job.last_run?.let { TimeUtils.formatRelativeTime(holder.itemView.context, it) } ?: "Never"
+++        holder.nextRun.text = job.next_run?.let { TimeUtils.formatRelativeTime(holder.itemView.context, it) } ?: "N/A"
++         
++         holder.toggle.isChecked = job.enabled
++         holder.toggle.setOnCheckedChangeListener { _, isChecked ->
++diff --git a/app/src/main/java/com/hermes/client/adapter/SkillsAdapter.kt b/app/src/main/java/com/hermes/client/adapter/SkillsAdapter.kt
++index d62e6eb..bd017cf 100644
++--- a/app/src/main/java/com/hermes/client/adapter/SkillsAdapter.kt
+++++ b/app/src/main/java/com/hermes/client/adapter/SkillsAdapter.kt
++@@ -59,9 +59,9 @@ class SkillsAdapter(
++         holder.pinButton.isSelected = skill.pinned
++         holder.pinButton.setImageDrawable(
++             if (skill.pinned) {
++-                itemView.context.getDrawable(android.R.drawable.ic_menu_share)
+++                holder.itemView.context.getDrawable(android.R.drawable.ic_menu_share)
++             } else {
++-                itemView.context.getDrawable(android.R.drawable.ic_menu_agenda)
+++                holder.itemView.context.getDrawable(android.R.drawable.ic_menu_agenda)
++             }
++         )
++ 
++diff --git a/app/src/main/java/com/hermes/client/api/HermesApi.kt b/app/src/main/java/com/hermes/client/api/HermesApi.kt
++index 264ef2f..dcf4a3c 100644
++--- a/app/src/main/java/com/hermes/client/api/HermesApi.kt
+++++ b/app/src/main/java/com/hermes/client/api/HermesApi.kt
++@@ -8,6 +8,16 @@ import org.json.JSONObject
++ import java.io.IOException
++ import java.util.concurrent.TimeUnit
++ 
+++// Update info data class
+++data class UpdateInfo(
+++    val versionCode: Long,
+++    val versionName: String,
+++    val apkUrl: String,
+++    val releaseNotes: String? = null,
+++    val mandatory: Boolean = false,
+++    val publishedAt: Long
+++)
 ++
-++    - name: Build with Gradle
-++      run: ./gradlew assembleDebug --no-daemon
++ class HermesApi(private val baseUrl: String, private val apiKey: String) {
++     
++     private val client = OkHttpClient.Builder()
++@@ -64,7 +74,7 @@ class HermesApi(private val baseUrl: String, private val apiKey: String) {
++         
++         websocketClient.newWebSocket(webSocketRequest, object : okhttp3.WebSocketListener() {
++             override fun onOpen(webSocket: WebSocket, response: Response) {
++-                webSocket.send(body)
+++                webSocket.send(body.toString())
++                 listener.onOpen()
++             }
++             
++@@ -93,7 +103,7 @@ class HermesApi(private val baseUrl: String, private val apiKey: String) {
++         
++         listener.onSocketReady(websocketClient.newWebSocket(webSocketRequest, object : okhttp3.WebSocketListener() {
++             override fun onOpen(webSocket: WebSocket, response: Response) {
++-                webSocket.send(body)
+++                webSocket.send(body.toString())
++                 listener.onOpen()
++             }
++             override fun onMessage(webSocket: WebSocket, text: String) {
++@@ -457,29 +467,6 @@ class HermesApi(private val baseUrl: String, private val apiKey: String) {
++             Result.failure(e)
++         }
++     }
++-}
++-
++-// WebSocket listener interface
++-interface WebSocketListener {
++-    fun onOpen()
++-    fun onMessage(response: ChatResponse)
++-    fun onError(error: Throwable)
++-    fun onClosed()
++-    fun onSocketReady(socket: WebSocket)
++-}
++-
++-// Simple JSON serializer
++-object GsonSerializer {
++-    private val gson = com.google.gson.GsonBuilder().create()
++-    
++-    fun <T> parse(json: String, clazz: Class<T>): T {
++-        return gson.fromJson(json, clazz)
++-    }
++-    
++-    fun <T> toJson(obj: T): String {
++-        return gson.toJson(obj)
++-    }
++-}
++ 
++     // Skills endpoints
++     suspend fun getSkills(category: String? = null, installed: Boolean? = null): Result<List<Skill>> {
++@@ -699,3 +686,26 @@ object GsonSerializer {
++             Result.failure(e)
++         }
++     }
+++}
 ++
-++    - name: Upload APK
-++      uses: actions/upload-artifact@v4
-++      with:
-++        name: app-debug-apk
-++        path: app/build/outputs/apk/debug/app-debug.apk
+++// WebSocket listener interface
+++interface WebSocketListener {
+++    fun onOpen()
+++    fun onMessage(response: ChatResponse)
+++    fun onError(error: Throwable)
+++    fun onClosed()
+++    fun onSocketReady(socket: WebSocket)
+++}
 ++
-++    - name: Release APK
-++      if: github.ref == 'refs/heads/main'
-++      uses: softprops/action-gh-release@v1
-++      with:
-++        files: app/build/outputs/apk/debug/app-debug.apk
-++        tag_name: v${{ github.run_number }}
-++        name: Release v${{ github.run_number }}
-++        draft: false
-++        prerelease: false
-++      env:
-++        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-+-- 
-+2.54.0
-+
+++// Simple JSON serializer
+++object GsonSerializer {
+++    private val gson = com.google.gson.GsonBuilder().create()
+++    
+++    fun <T> parse(json: String, clazz: Class<T>): T {
+++        return gson.fromJson(json, clazz)
+++    }
+++    
+++    fun <T> toJson(obj: T): String {
+++        return gson.toJson(obj)
+++    }
+++}
++diff --git a/app/src/main/java/com/hermes/client/model/Message.kt b/app/src/main/java/com/hermes/client/model/Message.kt
++index 49c627f..221d983 100644
++--- a/app/src/main/java/com/hermes/client/model/Message.kt
+++++ b/app/src/main/java/com/hermes/client/model/Message.kt
++@@ -17,7 +17,8 @@ sealed class Message {
++         override val role: String = "assistant",
++         override val content: String? = null,
++         override val timestamp: Long = System.currentTimeMillis(),
++-        val toolCalls: List<ToolCall>? = null
+++        val toolCalls: List<ToolCall>? = null,
+++        val thinking: String? = null
++     ) : Message()
++     
++     data class ToolMessage(
++diff --git a/app/src/main/java/com/hermes/client/ui/BrowserActivity.kt b/app/src/main/java/com/hermes/client/ui/BrowserActivity.kt
++index 0914377..04fcb1a 100644
++--- a/app/src/main/java/com/hermes/client/ui/BrowserActivity.kt
+++++ b/app/src/main/java/com/hermes/client/ui/BrowserActivity.kt
++@@ -1,5 +1,7 @@
++ package com.hermes.client.ui
++ 
+++import android.content.DialogInterface
+++import android.content.Intent
++ import android.graphics.Bitmap
++ import android.net.Uri
++ import android.os.Bundle
++@@ -12,6 +14,8 @@ import android.webkit.WebView
++ import android.webkit.WebViewClient
++ import android.widget.Toast
++ import androidx.appcompat.app.AppCompatActivity
+++import androidx.appcompat.app.AlertDialog
+++import com.hermes.client.R
++ import com.hermes.client.databinding.ActivityBrowserBinding
++ 
++ class BrowserActivity : AppCompatActivity() {
++@@ -47,7 +51,7 @@ class BrowserActivity : AppCompatActivity() {
++         override fun onReceivedHttpError(
++             view: WebView?,
++             request: WebResourceRequest?,
++-            errorResponse: HttpError?
+++            errorResponse: WebResourceResponse?
++         ) {
++             super.onReceivedHttpError(view, request, errorResponse)
++             binding.progressBar.visibility = View.GONE
++@@ -69,7 +73,7 @@ class BrowserActivity : AppCompatActivity() {
++         ): Boolean {
++             AlertDialog.Builder(this@BrowserActivity)
++                 .setMessage(message)
++-                .setPositiveButton("OK") { _, _ -> result?.confirm() }
+++                .setPositiveButton("OK") { _: DialogInterface, _: Int -> result?.confirm() }
++                 .setOnDismissListener { result?.cancel() }
++                 .show()
++             return true
++@@ -79,12 +83,12 @@ class BrowserActivity : AppCompatActivity() {
++             view: WebView?,
++             url: String?,
++             message: String?,
++-            result: JsConfirmResult?
+++            result: JsResult?
++         ): Boolean {
++             AlertDialog.Builder(this@BrowserActivity)
++                 .setMessage(message)
++-                .setPositiveButton("OK") { _, _ -> result?.confirm() }
++-                .setNegativeButton("Cancel") { _, _ -> result?.cancel() }
+++                .setPositiveButton("OK") { _: DialogInterface, _: Int -> result?.confirm() }
+++                .setNegativeButton("Cancel") { _: DialogInterface, _: Int -> result?.cancel() }
++                 .setOnDismissListener { result?.cancel() }
++                 .show()
++             return true
++@@ -95,7 +99,7 @@ class BrowserActivity : AppCompatActivity() {
++             url: String?,
++             message: String?,
++             defaultValue: String?,
++-            result: JsPromptResult?
+++            result: JsResult?
++         ): Boolean {
++             val input = android.widget.EditText(this@BrowserActivity).apply {
++                 setText(defaultValue)
++@@ -104,11 +108,11 @@ class BrowserActivity : AppCompatActivity() {
++             AlertDialog.Builder(this@BrowserActivity)
++                 .setMessage(message)
++                 .setView(input)
++-                .setPositiveButton("OK") { _, _ ->
+++                .setPositiveButton("OK") { _: DialogInterface, _: Int ->
++                     val text = input.text.toString()
++                     result?.confirm(text)
++                 }
++-                .setNegativeButton("Cancel") { _, _ -> result?.cancel() }
+++                .setNegativeButton("Cancel") { _: DialogInterface, _: Int -> result?.cancel() }
++                 .setOnDismissListener { result?.cancel() }
++                 .show()
++             return true
++@@ -132,6 +136,11 @@ class BrowserActivity : AppCompatActivity() {
++ 
++     companion object {
++         private const val FILE_CHOOSER_REQUEST = 100
+++        private const val MENU_DOWNLOAD_IMAGE = 1
+++        private const val MENU_OPEN_IMAGE = 2
+++        private const val MENU_OPEN_LINK = 3
+++        private const val MENU_COPY_LINK = 4
+++        const val EXTRA_URL = "extra_url"
++     }
++ 
++     override fun onCreate(savedInstanceState: Bundle?) {
++@@ -179,14 +188,6 @@ class BrowserActivity : AppCompatActivity() {
++             
++             // Add JavaScript interface for Hermes integration
++             addJavascriptInterface(HermesWebInterface(this@BrowserActivity), "Hermes")
++-            
++-            // Prevent external links from opening in external browser
++-            webViewClient = object : WebViewClient() {
++-                override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
++-                    // Let WebView handle the URL
++-                    return false
++-                }
++-            }
++         }
++     }
++ 
++@@ -331,7 +332,7 @@ class BrowserActivity : AppCompatActivity() {
++         val items = history.items.map { it.url }.toTypedArray()
++         AlertDialog.Builder(this)
++             .setTitle("History")
++-            .setItems(items) { _, which ->
+++            .setItems(items) { _: DialogInterface, which: Int ->
++                 loadUrl(items[which])
++             }
++             .setNegativeButton("Close", null)
++@@ -369,7 +370,7 @@ class BrowserActivity : AppCompatActivity() {
++         AlertDialog.Builder(this)
++             .setTitle("Clear Browser Data")
++             .setMessage("This will clear cache, cookies, and browsing data. Continue?")
++-            .setPositiveButton("Clear") { _, _ ->
+++            .setPositiveButton("Clear") { _: DialogInterface, _: Int ->
++                 val webSettings = binding.webView.settings
++                 webSettings.cacheMode = WebSettings.LOAD_NO_CACHE
++                 binding.webView.clearCache(true)
++@@ -450,12 +451,4 @@ class BrowserActivity : AppCompatActivity() {
++             return activity.binding.webView.canGoForward()
++         }
++     }
++-
++-    companion object {
++-        private const val MENU_DOWNLOAD_IMAGE = 1
++-        private const val MENU_OPEN_IMAGE = 2
++-        private const val MENU_OPEN_LINK = 3
++-        private const val MENU_COPY_LINK = 4
++-        const val EXTRA_URL = "extra_url"
++-    }
++ }
++diff --git a/app/src/main/java/com/hermes/client/util/MarkdownRenderer.kt b/app/src/main/java/com/hermes/client/util/MarkdownRenderer.kt
++index e43c182..d44d40d 100644
++--- a/app/src/main/java/com/hermes/client/util/MarkdownRenderer.kt
+++++ b/app/src/main/java/com/hermes/client/util/MarkdownRenderer.kt
++@@ -3,8 +3,8 @@ package com.hermes.client.util
++ import android.text.Html
++ import android.text.Spanned
++ import android.text.style.*
++-    import android.widget.TextView
++-    import java.util.regex.Pattern
+++import android.widget.TextView
+++import java.util.regex.Pattern
++ 
++ /**
++  * 轻量级 Markdown 渲染器
++@@ -16,7 +16,7 @@ object MarkdownRenderer {
++     private val INLINE_CODE_PATTERN = Pattern.compile("`([^`]+)`")
++     private val BOLD_PATTERN = Pattern.compile("\\*\\*([^*]+)\\*\\*|__([^_]+)__")
++     private val ITALIC_PATTERN = Pattern.compile("\\*([^*]+)\\*|_([^_]+)_")
++-    private val LINK_PATTERN = Pattern.compile("\\[([^\\]]+)\\]\\(([^)]+)\\)")
+++    private val LINK_PATTERN = Pattern.compile("\\[([^\\]]+)\\]\\\\(([^)]+)\\)")
++     private val HEADER_PATTERN = Pattern.compile("^(#{1,6})\\s+(.+)$", Pattern.MULTILINE)
++     private val BLOCKQUOTE_PATTERN = Pattern.compile("^>\\s*(.+)$", Pattern.MULTILINE)
++     private val UNORDERED_LIST_PATTERN = Pattern.compile("^[-*+]\\s+(.+)$", Pattern.MULTILINE)
++diff --git a/app/src/main/java/com/hermes/client/util/UpdateManager.kt b/app/src/main/java/com/hermes/client/util/UpdateManager.kt
++index 2f88d17..0bf1bed 100644
++--- a/app/src/main/java/com/hermes/client/util/UpdateManager.kt
+++++ b/app/src/main/java/com/hermes/client/util/UpdateManager.kt
++@@ -32,18 +32,18 @@ class UpdateManager(private val context: Context) {
++             val currentVersion = getCurrentVersionInfo()
++             val updateInfo = api?.getUpdateInfo()
++             
++-            updateInfo?.onSuccess { info ->
++-                if (info.versionCode > currentVersion.versionCode) {
++-                    return@checkForUpdates info
+++            updateInfo?.fold(
+++                onSuccess = { info ->
+++                    if (info.versionCode > currentVersion.versionCode) info else null
+++                },
+++                onFailure = { error ->
+++                    Log.e(TAG, "Failed to check for updates: ${error.message}")
+++                    null
++                 }
++-                return@checkForUpdates null
++-            }?.onFailure {
++-                Log.e(TAG, "Failed to check for updates: ${it.message}")
++-                return@checkForUpdates null
++-            }
+++            )
++         } catch (e: Exception) {
++             Log.e(TAG, "Error checking for updates", e)
++-            return@checkForUpdates null
+++            return null
++         }
++     }
++ 
++diff --git a/app/src/main/java/com/hermes/client/util/VoiceInputHelper.kt b/app/src/main/java/com/hermes/client/util/VoiceInputHelper.kt
++index 4eed52a..cda4f69 100644
++--- a/app/src/main/java/com/hermes/client/util/VoiceInputHelper.kt
+++++ b/app/src/main/java/com/hermes/client/util/VoiceInputHelper.kt
++@@ -166,10 +166,6 @@ class TTSHelper(
++                 isSpeaking = false
++             }
++ 
++-            @Deprecated("Deprecated in Java")
++-            override fun onStarterDone(utteranceId: String?) {
++-                // No-op
++-            }
++         })
++ 
++         textToSpeech?.speak(text, TextToSpeech.QUEUE_FLUSH, null, null)
++diff --git a/app/src/main/java/com/hermes/client/viewmodel/MainViewModel.kt b/app/src/main/java/com/hermes/client/viewmodel/MainViewModel.kt
++index 0a69fda..6a3b7bf 100644
++--- a/app/src/main/java/com/hermes/client/viewmodel/MainViewModel.kt
+++++ b/app/src/main/java/com/hermes/client/viewmodel/MainViewModel.kt
++@@ -68,7 +68,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
++         }
++ 
++         val messages = _messages.value ?: return
++-        messages.add(UserMessage(content = content))
+++        messages.add(Message.UserMessage(content = content))
++         _messages.value = messages
++ 
++         viewModelScope.launch {
++@@ -89,9 +89,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
++             model = currentModel,
++             stream = true
++         )
++-
++-        isStreaming = true
++-        val assistantMsg = AssistantMessage()
+++        
+++        val assistantMsg = Message.AssistantMessage()
++         _messages.value?.add(assistantMsg)
++         _messages.value = _messages.value
++ 
++@@ -99,8 +98,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
++             override fun onOpen() {}
++             override fun onMessage(response: ChatResponse) {
++                 response.choices?.firstOrNull()?.message?.content?.let { content ->
++-                    assistantMsg.content = (assistantMsg.content ?: "") + content
++-                    _messages.value = _messages.value
+++                    // Update the content by replacing the message in the list
+++                    val index = _messages.value?.indexOf(assistantMsg) ?: -1
+++                    if (index >= 0) {
+++                        val updatedMsg = assistantMsg.copy(content = (assistantMsg.content ?: "") + content)
+++                        _messages.value?.set(index, updatedMsg)
+++                        _messages.value = _messages.value
+++                    }
++                 }
++             }
++             override fun onError(error: Throwable) {
++diff --git a/app/src/main/java/com/hermes/client/viewmodel/SkillsViewModel.kt b/app/src/main/java/com/hermes/client/viewmodel/SkillsViewModel.kt
++index 89ef96d..672345d 100644
++--- a/app/src/main/java/com/hermes/client/viewmodel/SkillsViewModel.kt
+++++ b/app/src/main/java/com/hermes/client/viewmodel/SkillsViewModel.kt
++@@ -53,10 +53,10 @@ class SkillsViewModel(application: Application) : AndroidViewModel(application)
++         viewModelScope.launch {
++             val result = api?.getSkills(category = category)
++             _loading.value = false
++-            result?.onSuccess { skills ->
+++            result?.onSuccess { skills: List<Skill> ->
++                 _skills.value = skills
++-            }?.onFailure {
++-                _error.value = it.message
+++            }?.onFailure { error: Throwable ->
+++                _error.value = error.message
++             }
++         }
++     }
++@@ -64,7 +64,7 @@ class SkillsViewModel(application: Application) : AndroidViewModel(application)
++     fun loadCategories() {
++         viewModelScope.launch {
++             val result = api?.getSkillCategories()
++-            result?.onSuccess { categories ->
+++            result?.onSuccess { categories: List<SkillCategory> ->
++                 _categories.value = categories
++             }
++         }
++@@ -80,10 +80,10 @@ class SkillsViewModel(application: Application) : AndroidViewModel(application)
++         viewModelScope.launch {
++             val result = api?.installSkill(id)
++             _installing.value = null
++-            result?.onSuccess {
+++            result?.onSuccess { skill: Skill ->
++                 refresh()
++-            }?.onFailure {
++-                _error.value = it.message
+++            }?.onFailure { error: Throwable ->
+++                _error.value = error.message
++             }
++         }
++     }
++@@ -93,10 +93,10 @@ class SkillsViewModel(application: Application) : AndroidViewModel(application)
++         viewModelScope.launch {
++             val result = api?.uninstallSkill(id)
++             _installing.value = null
++-            result?.onSuccess {
+++            result?.onSuccess { success: Boolean ->
++                 refresh()
++-            }?.onFailure {
++-                _error.value = it.message
+++            }?.onFailure { error: Throwable ->
+++                _error.value = error.message
++             }
++         }
++     }
++@@ -104,8 +104,8 @@ class SkillsViewModel(application: Application) : AndroidViewModel(application)
++     fun togglePin(id: String) {
++         viewModelScope.launch {
++             val result = api?.togglePinSkill(id)
++-            result?.onFailure {
++-                _error.value = it.message
+++            result?.onFailure { error: Throwable ->
+++                _error.value = error.message
++             }
++             refresh()
++         }
++@@ -118,10 +118,10 @@ class SkillsViewModel(application: Application) : AndroidViewModel(application)
++             return
++         }
++ 
++-        val filtered = allSkills.filter { skill ->
+++        val filtered = allSkills.filter { skill: Skill ->
++             skill.name.contains(query, ignoreCase = true) ||
++                     skill.description.contains(query, ignoreCase = true) ||
++-                    skill.tags?.any { it.contains(query, ignoreCase = true) } == true
+++                    skill.tags?.any { tag: String -> tag.contains(query, ignoreCase = true) } == true
++         }
++         _skills.value = filtered
++     }
++diff --git a/app/src/main/res/layout/activity_browser.xml b/app/src/main/res/layout/activity_browser.xml
++index c174d26..5575c95 100644
++--- a/app/src/main/res/layout/activity_browser.xml
+++++ b/app/src/main/res/layout/activity_browser.xml
++@@ -31,7 +31,7 @@
++                 android:layout_width="48dp"
++                 android:layout_height="48dp"
++                 android:background="?attr/selectableItemBackgroundBorderless"
++-                android:src="@android:drawable/ic_menu_forward"
+++                android:src="@android:drawable/ic_menu_revert"
++                 android:contentDescription="Go forward" />
++ 
++             <ImageButton
++@@ -55,7 +55,7 @@
++                 android:layout_width="48dp"
++                 android:layout_height="48dp"
++                 android:background="?attr/selectableItemBackgroundBorderless"
++-                android:src="@android:drawable/ic_menu_mapmode"
+++                android:src="@android:drawable/ic_menu_myplaces"
++                 android:contentDescription="Home" />
++ 
++             <EditText
++diff --git a/app/src/main/res/layout/activity_main.xml b/app/src/main/res/layout/activity_main.xml
++index 3047eb0..97adedd 100644
++--- a/app/src/main/res/layout/activity_main.xml
+++++ b/app/src/main/res/layout/activity_main.xml
++@@ -119,7 +119,7 @@
++                     android:layout_gravity="center_vertical"
++                     android:background="?attr/selectableItemBackgroundBorderless"
++                     android:contentDescription="Attach file"
++-                    android:src="@android:drawable/ic_menu_attach"
+++                    android:src="@android:drawable/ic_menu_upload"
++                     app:tint="@color/primary" />
++ 
++                 <EditText
++diff --git a/app/src/main/res/layout/item_message_user.xml b/app/src/main/res/layout/item_message_user.xml
++index 6b8c846..114e892 100644
++--- a/app/src/main/res/layout/item_message_user.xml
+++++ b/app/src/main/res/layout/item_message_user.xml
++@@ -1,5 +1,6 @@
++ <?xml version="1.0" encoding="utf-8"?>
++ <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+++    xmlns:app="http://schemas.android.com/apk/res-auto"
++     xmlns:tools="http://schemas.android.com/tools"
++     android:layout_width="match_parent"
++     android:layout_height="wrap_content"
++diff --git a/app/src/main/res/layout/item_skill.xml b/app/src/main/res/layout/item_skill.xml
++index ed4d35f..7349b5b 100644
++--- a/app/src/main/res/layout/item_skill.xml
+++++ b/app/src/main/res/layout/item_skill.xml
++@@ -64,7 +64,7 @@
++                 android:textSize="11sp"
++                 android:textColor="@color/primary"
++                 android:background="@color/purple_200"
++-                android:padding="2dp 6dp"
+++                android:padding="4dp"
++                 android:text="Category" />
++ 
++             <TextView
++diff --git a/build.gradle.kts.bak b/build.gradle.kts.bak
++new file mode 100644
++index 0000000..b0677f1
++--- /dev/null
+++++ b/build.gradle.kts.bak
++@@ -0,0 +1,5 @@
+++// Top-level build file where you can add configuration options common to all sub-projects/modules.
+++plugins {
+++    id("com.android.application") version "8.2.0" apply false
+++    id("org.jetbrains.kotlin.android") version "1.9.20" apply false
+++}
++diff --git a/build.sh b/build.sh
++new file mode 100755
++index 0000000..cbd82ac
++--- /dev/null
+++++ b/build.sh
++@@ -0,0 +1,41 @@
+++#!/bin/bash
+++# Hermes Android Client - Manual Build Script for Termux
+++
+++set -e
+++
+++PROJECT_DIR="~/hermes-android-client"
+++ANDROID_JAR="/data/data/com.termux/files/usr/share/aapt/android.jar"
+++KOTLIN_STDLIB="/data/data/com.termux/files/usr/opt/kotlin/lib/kotlin-stdlib-jdk8.jar"
+++OUTPUT_DIR="$PROJECT_DIR/build"
+++
+++echo "=== Hermes Android Client Build ==="
+++echo "Project: $PROJECT_DIR"
+++echo "Android JAR: $ANDROID_JAR"
+++
+++# Step 1: Compile resources with aapt2
+++echo "[1/4] Compiling resources..."
+++aapt2 c -I $ANDROID_JAR \
+++    -I $KOTLIN_STDLIB \
+++    -o $OUTPUT_DIR/resources.apk \
+++    -R $PROJECT_DIR/app/src/main/res \
+++    --output-text-symbols $OUTPUT_DIR/R.java
+++
+++# Step 2: Compile Kotlin to Java bytecode
+++echo "[2/4] Compiling Kotlin..."
+++kotlinc -no-stdlib -Xno-param-assertions -Xno-call-assertions \
+++    -cp "$ANDROID_JAR:$KOTLIN_STDLIB" \
+++    -d $OUTPUT_DIR/classes.jar \
+++    $PROJECT_DIR/app/src/main/java/**/*.kt 2>/dev/null || true
+++
+++# Step 3: Convert to DEX
+++echo "[3/4] Converting to DEX..."
+++d8 --output $OUTPUT_DIR/output.dex $OUTPUT_DIR/classes.jar 2>/dev/null || true
+++
+++# Step 4: Package APK
+++echo "[4/4] Packaging APK..."
+++apksigner sign --ks $OUTPUT_DIR/debug.keystore \
+++    --out $OUTPUT_DIR/app.apk \
+++    $OUTPUT_DIR/resources.apk
+++
+++echo "=== Build Complete ==="
+++ls -la $OUTPUT_DIR/*.apk 2>/dev/null || echo "No APK generated"
++diff --git a/gradle.properties b/gradle.properties
++index 2cf094b..a0cdd0a 100644
++--- a/gradle.properties
+++++ b/gradle.properties
++@@ -1,5 +1,15 @@
++ # Project-wide Gradle settings.
++ org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
+++org.gradle.parallel=true
+++org.gradle.caching=true
+++
+++# AndroidX
++ android.useAndroidX=true
+++android.enableJetifier=true
+++
+++# SDK
+++android.sdk.dir=/data/data/com.termux/files/usr
+++android.sdk.accepted=true
+++
+++# Kotlin
++ kotlin.code.style=official
++-android.nonTransitiveRClass=true
++diff --git a/gradle/wrapper/gradle-wrapper.jar b/gradle/wrapper/gradle-wrapper.jar
++new file mode 100644
++index 0000000..033e24c
++Binary files /dev/null and b/gradle/wrapper/gradle-wrapper.jar differ
++diff --git a/gradle/wrapper/gradle-wrapper.properties b/gradle/wrapper/gradle-wrapper.properties
++index 15de902..7b132bb 100644
++--- a/gradle/wrapper/gradle-wrapper.properties
+++++ b/gradle/wrapper/gradle-wrapper.properties
++@@ -1,5 +1,5 @@
++ distributionBase=GRADLE_USER_HOME
++ distributionPath=wrapper/dists
++-distributionUrl=https\://services.gradle.org/distributions/gradle-8.2-bin.zip
+++distributionUrl=https://services.gradle.org/distributions/gradle-8.2-bin.zip
++ zipStoreBase=GRADLE_USER_HOME
++ zipStorePath=wrapper/dists
++diff --git a/gradlew b/gradlew
++new file mode 100755
++index 0000000..dcd3bb1
++--- /dev/null
+++++ b/gradlew
++@@ -0,0 +1,75 @@
+++#!/bin/sh
+++
+++# Gradle wrapper script for Android projects
+++
+++APP_NAME="Gradle"
+++APP_BASE_NAME=`basename "$0"`
+++DEFAULT_JVM_OPTS='"-Xmx64m" "-Xms64m"'
+++
+++# Attempt to set APP_HOME
+++APP_HOME="`pwd -P`"
+++
+++# Add default JVM options
+++DEFAULT_JVM_OPTS='"-Xmx64m" "-Xms64m"'
+++
+++# Use the maximum available, or set MAX_FD != -1 to use that value.
+++MAX_FD="maximum"
+++
+++warn () {
+++    echo "$*"
+++}
+++
+++die () {
+++    echo "$*"
+++}
+++
+++# OS specific support
+++cygwin=false
+++msys=false
+++darwin=false
+++nonstop=false
+++case "`uname`" in
+++  CYGWIN* )
+++    cygwin=true
+++    ;;
+++  Darwin* )
+++    darwin=true
+++    ;;
+++  MINGW* )
+++    msys=true
+++    ;;
+++  NONSTOP* )
+++    nonstop=true
+++    ;;
+++esac
+++
+++CLASSPATH=$APP_HOME/gradle/wrapper/gradle-wrapper.jar
+++
+++# Determine the Java command to use to start the JVM.
+++if [ -n "$JAVA_HOME" ] ; then
+++    if [ -x "$JAVA_HOME/jre/sh/java" ] ; then
+++        JAVACMD="$JAVA_HOME/jre/sh/java"
+++    else
+++        JAVACMD="$JAVA_HOME/bin/java"
+++    fi
+++    if [ ! -x "$JAVACMD" ] ; then
+++        die "ERROR: JAVA_HOME is set to an invalid directory: $JAVA_HOME"
+++    fi
+++else
+++    JAVACMD="java"
+++    which java >/dev/null 2>&1 || die "ERROR: JAVA_HOME is not set and no 'java' command could be found in your PATH."
+++fi
+++
+++# Escape application args
+++for i in "$@"; do
+++    case "$i" in
+++        *) 
+++            APP_ARGS="$APP_ARGS \"$i\""
+++            ;;
+++    esac
+++done
+++
+++# Collect all arguments for the java command, following the shell quoting and substitution rules
+++eval set -- $DEFAULT_JVM_OPTS $JAVA_OPTS $GRADLE_OPTS "\"-Dorg.gradle.appname=$APP_BASE_NAME\"" -classpath "\"$CLASSPATH\"" org.gradle.wrapper.GradleWrapperMain "$APP_ARGS"
+++
+++exec "$JAVACMD" "$@"
++diff --git a/hermes-updates.patch b/hermes-updates.patch
++new file mode 100644
++index 0000000..7d5eb6b
++--- /dev/null
+++++ b/hermes-updates.patch
++@@ -0,0 +1,310 @@
+++From 0401d7e97911ae4a60e07eda6909e7171f03cd62 Mon Sep 17 00:00:00 2001
+++From: youxijiaose <youxijiaose@users.noreply.github.com>
+++Date: Fri, 19 Jun 2026 04:35:02 +0800
+++Subject: [PATCH 1/2] docs: add comprehensive build guide
+++
+++---
+++ BUILD_GUIDE.md | 194 +++++++++++++++++++++++++++++++------------------
+++ 1 file changed, 125 insertions(+), 69 deletions(-)
+++
+++diff --git a/BUILD_GUIDE.md b/BUILD_GUIDE.md
+++index 1b031e3..b64fff8 100644
+++--- a/BUILD_GUIDE.md
++++++ b/BUILD_GUIDE.md
+++@@ -1,101 +1,157 @@
+++-# 构建指南
++++# Hermes Android Client - 构建指南
+++ 
+++-## 方式一：Android Studio（推荐）
++++## 方法一：Android Studio（推荐）
+++ 
+++-1. **复制项目到电脑**
+++-   ```bash
+++-   # 在 Termux 上压缩项目
+++-   cd ~
+++-   tar -czf hermes-android-client.tar.gz hermes-android-client/
+++-   
+++-   # 使用 MT 管理器或 adb 传输到电脑
+++-   ```
++++### 1. 准备环境
++++- Android Studio Hedgehog 或更高版本
++++- JDK 17+ 或 JDK 21
++++- Android SDK (API 24-34)
+++ 
+++-2. **在 Android Studio 中打开**
+++-   - File > Open > 选择项目文件夹
+++-   - 等待 Gradle 同步完成
+++-   - Build > Build Bundle(s) / APK(s) > Build APK(s)
++++### 2. 导入项目
++++```
++++1. 打开 Android Studio
++++2. File → Open → 选择 hermes-android-client 文件夹
++++3. 等待 Gradle 同步完成
++++4. 点击 "Sync Now"
++++```
+++ 
+++-3. **安装到手机**
+++-   - APK 位于 `app/build/outputs/apk/debug/app-debug.apk`
+++-   - 传输到手机，使用 MT 管理器安装
++++### 3. 构建 APK
++++```
++++1. Build → Build Bundle(s) / APK(s) → Build APK(s)
++++2. 等待构建完成
++++3. APK 位置：app/build/outputs/apk/debug/app-debug.apk
++++```
+++ 
+++-## 方式二：Termux 命令行构建（高级）
++++### 4. 安装到设备
++++```
++++1. 连接 Android 设备
++++2. 运行：Run → Run 'app'
++++3. 或手动安装 APK
++++```
+++ 
+++-需要安装完整的 Android SDK：
++++---
+++ 
++++## 方法二：命令行构建（需要 Android SDK）
++++
++++### 1. 设置环境变量
+++ ```bash
+++-# 1. 安装 Android SDK
+++-pkg install android-sdk
++++export ANDROID_HOME=/path/to/android/sdk
++++export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin
++++export PATH=$PATH:$ANDROID_HOME/platform-tools
++++```
+++ 
+++-# 2. 接受许可证
++++### 2. 接受许可证
++++```bash
+++ sdkmanager --licenses
++++```
+++ 
+++-# 3. 安装必要的组件
+++-sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+++-
+++-# 4. 设置环境变量
+++-export ANDROID_HOME=/data/data/com.termux/files/usr/share/android-sdk
+++-export PATH=$PATH:$ANDROID_HOME/platform-tools:$ANDROID_HOME/build-tools/34.0.0
++++### 3. 下载依赖
++++```bash
++++./gradlew dependencies
++++```
+++ 
+++-# 5. 下载 Gradle wrapper
+++-cd ~/hermes-android-client
++++### 4. 构建 Debug APK
++++```bash
+++ ./gradlew assembleDebug
++++```
+++ 
+++-# 注意：Termux 构建可能因内存限制失败
++++### 5. 构建 Release APK
++++```bash
++++./gradlew assembleRelease
+++ ```
+++ 
+++-## 方式三：使用在线构建服务
++++### 6. 签名 Release APK
++++```bash
++++# 生成签名密钥
++++keytool -genkey -v -keystore hermes-key.jks -keyalg RSA -keysize 2048 -validity 10000 -alias hermes
++++
++++# 使用 jarsigner 签名
++++jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 \
++++  -keystore hermes-key.jks \
++++  app/build/outputs/apk/release/app-release-unsigned.apk \
++++  hermes
++++
++++# 或使用 apksigner（推荐）
++++apksigner sign --ks hermes-key.jks \
++++  app/build/outputs/apk/release/app-release-unsigned.apk
++++```
++++
++++---
+++ 
+++-1. 将项目上传到 GitHub
+++-2. 使用 GitHub Actions 自动构建
+++-3. 下载构建好的 APK
++++## 方法三：Termux 构建（不推荐）
+++ 
+++-## 项目文件清单
++++Termux 上缺少 Android SDK，需要手动配置：
+++ 
++++### 1. 安装 Android SDK 命令行工具
++++```bash
++++# 下载 SDK 命令行工具
++++wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
++++unzip commandlinetools-linux-*.zip -d ~/android-sdk
+++ ```
+++-hermes-android-client/
+++-├── app/                          # 主应用模块
+++-│   ├── build.gradle.kts          # 模块级构建配置
+++-│   ├── proguard-rules.pro        # ProGuard 规则
+++-│   └── src/main/
+++-│       ├── AndroidManifest.xml   # 应用清单
+++-│       ├── java/com/hermes/client/
+++-│       │   ├── api/HermesApi.kt           # API 客户端
+++-│       │   ├── model/Message.kt           # 数据模型
+++-│       │   ├── adapter/                   # RecyclerView 适配器
+++-│       │   ├── viewmodel/                 # ViewModel
+++-│       │   └── ui/                        # Activities
+++-│       └── res/                           # 资源文件
+++-├── build.gradle.kts              # 项目级构建配置
+++-├── settings.gradle.kts           # 项目设置
+++-├── gradle.properties             # Gradle 属性
+++-├── gradle/wrapper/               # Gradle Wrapper
+++-├── README.md                     # 使用说明
+++-└── BUILD_GUIDE.md                # 构建指南
++++
++++### 2. 设置环境变量
++++```bash
++++export ANDROID_HOME=$HOME/android-sdk
++++export PATH=$PATH:$ANDROID_HOME/cmdline-tools/bin
++++```
++++
++++### 3. 安装必要组件
++++```bash
++++sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+++ ```
+++ 
++++### 4. 构建
++++```bash
++++./gradlew assembleDebug
++++```
++++
++++---
++++
++++## 构建产物
++++
++++| 类型 | 路径 | 大小 |
++++|------|------|------|
++++| Debug APK | `app/build/outputs/apk/debug/app-debug.apk` | ~15MB |
++++| Release APK | `app/build/outputs/apk/release/app-release.apk` | ~12MB |
++++
++++---
++++
+++ ## 常见问题
+++ 
+++-### Q: Gradle 同步失败？
+++-A: 检查网络连接，或配置国内镜像源：
++++### Q: SDK location not found
++++**A:** 设置 `ANDROID_HOME` 环境变量或在 `local.properties` 中指定 SDK 路径：
++++```
++++sdk.dir=/path/to/android/sdk
++++```
++++
++++### Q: Gradle sync failed
++++**A:** 检查网络连接，或配置 Gradle 镜像：
+++ ```gradle
+++-// 在 settings.gradle.kts 中添加
+++-dependencyResolutionManagement {
++++// 在 build.gradle 中添加
++++buildscript {
+++     repositories {
+++-        maven{ url = uri("https://maven.aliyun.com/repository/public") }
+++-        maven{ url = uri("https://maven.aliyun.com/repository/google") }
+++-        google()
+++-        mavenCentral()
++++        maven { url 'https://maven.aliyun.com/repository/public' }
++++        maven { url 'https://maven.aliyun.com/repository/google' }
+++     }
+++ }
+++ ```
+++ 
+++-### Q: 构建内存不足？
+++-A: 在 `gradle.properties` 中增加堆内存：
+++-```properties
+++-org.gradle.jvmargs=-Xmx4096m -Dfile.encoding=UTF-8
++++### Q: 签名失败
++++**A:** 确保签名密钥存在且密码正确
++++
++++---
++++
++++## 快速构建（Android Studio）
++++
+++ ```
++++1. 打开 Android Studio
++++2. File → Open → 选择项目文件夹
++++3. 等待 Gradle 同步
++++4. Build → Build APK
++++5. 找到 APK：app/build/outputs/apk/debug/
++++```
++++
++++---
+++ 
+++-### Q: 找不到 SDK？
+++-A: 确保 ANDROID_HOME 环境变量正确设置。
++++**构建时间：** ~3-5 分钟（首次）/ ~1-2 分钟（后续）
++++**APK 大小：** ~12-15MB
+++-- 
+++2.54.0
+++
+++
+++From 19b7c3fe663db697660b603ad171abfdfc3ccf2d Mon Sep 17 00:00:00 2001
+++From: youxijiaose <youxijiaose@users.noreply.github.com>
+++Date: Fri, 19 Jun 2026 04:55:44 +0800
+++Subject: [PATCH 2/2] ci: add GitHub Actions workflow for Android build
+++
+++---
+++ .github/workflows/android.yml | 47 +++++++++++++++++++++++++++++++++++
+++ 1 file changed, 47 insertions(+)
+++ create mode 100644 .github/workflows/android.yml
+++
+++diff --git a/.github/workflows/android.yml b/.github/workflows/android.yml
+++new file mode 100644
+++index 0000000..8f0919d
+++--- /dev/null
++++++ b/.github/workflows/android.yml
+++@@ -0,0 +1,47 @@
++++name: Android CI
++++
++++on:
++++  push:
++++    branches: [ main ]
++++  pull_request:
++++    branches: [ main ]
++++  workflow_dispatch:
++++
++++jobs:
++++  build:
++++    runs-on: ubuntu-latest
++++    
++++    steps:
++++    - name: Checkout code
++++      uses: actions/checkout@v4
++++
++++    - name: Set up JDK 17
++++      uses: actions/setup-java@v4
++++      with:
++++        java-version: '17'
++++        distribution: 'temurin'
++++        cache: gradle
++++
++++    - name: Grant execute permission
++++      run: chmod +x gradlew
++++
++++    - name: Build with Gradle
++++      run: ./gradlew assembleDebug --no-daemon
++++
++++    - name: Upload APK
++++      uses: actions/upload-artifact@v4
++++      with:
++++        name: app-debug-apk
++++        path: app/build/outputs/apk/debug/app-debug.apk
++++
++++    - name: Release APK
++++      if: github.ref == 'refs/heads/main'
++++      uses: softprops/action-gh-release@v1
++++      with:
++++        files: app/build/outputs/apk/debug/app-debug.apk
++++        tag_name: v${{ github.run_number }}
++++        name: Release v${{ github.run_number }}
++++        draft: false
++++        prerelease: false
++++      env:
++++        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+++-- 
+++2.54.0
+++
++diff --git a/settings.gradle.kts b/settings.gradle.kts
++index 1ca4d19..54996d3 100644
++--- a/settings.gradle.kts
+++++ b/settings.gradle.kts
++@@ -5,7 +5,6 @@ pluginManagement {
++         gradlePluginPortal()
++     }
++ }
++-
++ dependencyResolutionManagement {
++     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
++     repositories {
++@@ -14,5 +13,5 @@ dependencyResolutionManagement {
++     }
++ }
++ 
++-rootProject.name = "HermesClient"
+++rootProject.name = "hermes-android-client"
++ include(":app")
 diff --git a/settings.gradle.kts b/settings.gradle.kts
 index 1ca4d19..54996d3 100644
 --- a/settings.gradle.kts

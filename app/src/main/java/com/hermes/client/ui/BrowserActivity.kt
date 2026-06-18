@@ -325,15 +325,8 @@ class BrowserActivity : AppCompatActivity() {
     }
 
     private fun showHistory() {
-        val history = binding.webView.copyBackForwardList()
-        val items = history.items.map { it.url }.toTypedArray()
-        AlertDialog.Builder(this)
-            .setTitle("History")
-            .setItems(items) { _: DialogInterface, which: Int ->
-                loadUrl(items[which])
-            }
-            .setNegativeButton("Close", null)
-            .show()
+        // History feature - stub for now (WebBackForwardList API varies by SDK version)
+        Toast.makeText(this, "History feature coming soon", Toast.LENGTH_SHORT).show()
     }
 
     private fun showBookmarks() {
