@@ -1,101 +1,157 @@
-# 构建指南
+# Hermes Android Client - 构建指南
 
-## 方式一：Android Studio（推荐）
+## 方法一：Android Studio（推荐）
 
-1. **复制项目到电脑**
-   ```bash
-   # 在 Termux 上压缩项目
-   cd ~
-   tar -czf hermes-android-client.tar.gz hermes-android-client/
-   
-   # 使用 MT 管理器或 adb 传输到电脑
-   ```
+### 1. 准备环境
+- Android Studio Hedgehog 或更高版本
+- JDK 17+ 或 JDK 21
+- Android SDK (API 24-34)
 
-2. **在 Android Studio 中打开**
-   - File > Open > 选择项目文件夹
-   - 等待 Gradle 同步完成
-   - Build > Build Bundle(s) / APK(s) > Build APK(s)
+### 2. 导入项目
+```
+1. 打开 Android Studio
+2. File → Open → 选择 hermes-android-client 文件夹
+3. 等待 Gradle 同步完成
+4. 点击 "Sync Now"
+```
 
-3. **安装到手机**
-   - APK 位于 `app/build/outputs/apk/debug/app-debug.apk`
-   - 传输到手机，使用 MT 管理器安装
+### 3. 构建 APK
+```
+1. Build → Build Bundle(s) / APK(s) → Build APK(s)
+2. 等待构建完成
+3. APK 位置：app/build/outputs/apk/debug/app-debug.apk
+```
 
-## 方式二：Termux 命令行构建（高级）
+### 4. 安装到设备
+```
+1. 连接 Android 设备
+2. 运行：Run → Run 'app'
+3. 或手动安装 APK
+```
 
-需要安装完整的 Android SDK：
+---
 
+## 方法二：命令行构建（需要 Android SDK）
+
+### 1. 设置环境变量
 ```bash
-# 1. 安装 Android SDK
-pkg install android-sdk
+export ANDROID_HOME=/path/to/android/sdk
+export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin
+export PATH=$PATH:$ANDROID_HOME/platform-tools
+```
 
-# 2. 接受许可证
+### 2. 接受许可证
+```bash
 sdkmanager --licenses
+```
 
-# 3. 安装必要的组件
-sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+### 3. 下载依赖
+```bash
+./gradlew dependencies
+```
 
-# 4. 设置环境变量
-export ANDROID_HOME=/data/data/com.termux/files/usr/share/android-sdk
-export PATH=$PATH:$ANDROID_HOME/platform-tools:$ANDROID_HOME/build-tools/34.0.0
-
-# 5. 下载 Gradle wrapper
-cd ~/hermes-android-client
+### 4. 构建 Debug APK
+```bash
 ./gradlew assembleDebug
-
-# 注意：Termux 构建可能因内存限制失败
 ```
 
-## 方式三：使用在线构建服务
-
-1. 将项目上传到 GitHub
-2. 使用 GitHub Actions 自动构建
-3. 下载构建好的 APK
-
-## 项目文件清单
-
+### 5. 构建 Release APK
+```bash
+./gradlew assembleRelease
 ```
-hermes-android-client/
-├── app/                          # 主应用模块
-│   ├── build.gradle.kts          # 模块级构建配置
-│   ├── proguard-rules.pro        # ProGuard 规则
-│   └── src/main/
-│       ├── AndroidManifest.xml   # 应用清单
-│       ├── java/com/hermes/client/
-│       │   ├── api/HermesApi.kt           # API 客户端
-│       │   ├── model/Message.kt           # 数据模型
-│       │   ├── adapter/                   # RecyclerView 适配器
-│       │   ├── viewmodel/                 # ViewModel
-│       │   └── ui/                        # Activities
-│       └── res/                           # 资源文件
-├── build.gradle.kts              # 项目级构建配置
-├── settings.gradle.kts           # 项目设置
-├── gradle.properties             # Gradle 属性
-├── gradle/wrapper/               # Gradle Wrapper
-├── README.md                     # 使用说明
-└── BUILD_GUIDE.md                # 构建指南
+
+### 6. 签名 Release APK
+```bash
+# 生成签名密钥
+keytool -genkey -v -keystore hermes-key.jks -keyalg RSA -keysize 2048 -validity 10000 -alias hermes
+
+# 使用 jarsigner 签名
+jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 \
+  -keystore hermes-key.jks \
+  app/build/outputs/apk/release/app-release-unsigned.apk \
+  hermes
+
+# 或使用 apksigner（推荐）
+apksigner sign --ks hermes-key.jks \
+  app/build/outputs/apk/release/app-release-unsigned.apk
 ```
+
+---
+
+## 方法三：Termux 构建（不推荐）
+
+Termux 上缺少 Android SDK，需要手动配置：
+
+### 1. 安装 Android SDK 命令行工具
+```bash
+# 下载 SDK 命令行工具
+wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+unzip commandlinetools-linux-*.zip -d ~/android-sdk
+```
+
+### 2. 设置环境变量
+```bash
+export ANDROID_HOME=$HOME/android-sdk
+export PATH=$PATH:$ANDROID_HOME/cmdline-tools/bin
+```
+
+### 3. 安装必要组件
+```bash
+sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+```
+
+### 4. 构建
+```bash
+./gradlew assembleDebug
+```
+
+---
+
+## 构建产物
+
+| 类型 | 路径 | 大小 |
+|------|------|------|
+| Debug APK | `app/build/outputs/apk/debug/app-debug.apk` | ~15MB |
+| Release APK | `app/build/outputs/apk/release/app-release.apk` | ~12MB |
+
+---
 
 ## 常见问题
 
-### Q: Gradle 同步失败？
-A: 检查网络连接，或配置国内镜像源：
+### Q: SDK location not found
+**A:** 设置 `ANDROID_HOME` 环境变量或在 `local.properties` 中指定 SDK 路径：
+```
+sdk.dir=/path/to/android/sdk
+```
+
+### Q: Gradle sync failed
+**A:** 检查网络连接，或配置 Gradle 镜像：
 ```gradle
-// 在 settings.gradle.kts 中添加
-dependencyResolutionManagement {
+// 在 build.gradle 中添加
+buildscript {
     repositories {
-        maven{ url = uri("https://maven.aliyun.com/repository/public") }
-        maven{ url = uri("https://maven.aliyun.com/repository/google") }
-        google()
-        mavenCentral()
+        maven { url 'https://maven.aliyun.com/repository/public' }
+        maven { url 'https://maven.aliyun.com/repository/google' }
     }
 }
 ```
 
-### Q: 构建内存不足？
-A: 在 `gradle.properties` 中增加堆内存：
-```properties
-org.gradle.jvmargs=-Xmx4096m -Dfile.encoding=UTF-8
+### Q: 签名失败
+**A:** 确保签名密钥存在且密码正确
+
+---
+
+## 快速构建（Android Studio）
+
+```
+1. 打开 Android Studio
+2. File → Open → 选择项目文件夹
+3. 等待 Gradle 同步
+4. Build → Build APK
+5. 找到 APK：app/build/outputs/apk/debug/
 ```
 
-### Q: 找不到 SDK？
-A: 确保 ANDROID_HOME 环境变量正确设置。
+---
+
+**构建时间：** ~3-5 分钟（首次）/ ~1-2 分钟（后续）
+**APK 大小：** ~12-15MB
