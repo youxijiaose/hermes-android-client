@@ -99,7 +99,7 @@ class BrowserActivity : AppCompatActivity() {
             url: String?,
             message: String?,
             defaultValue: String?,
-            result: JsResult?
+            result: JsPromptResult?
         ): Boolean {
             val input = android.widget.EditText(this@BrowserActivity).apply {
                 setText(defaultValue)
@@ -180,7 +180,6 @@ class BrowserActivity : AppCompatActivity() {
                 
                 // Performance
                 mediaPlaybackRequiresUserGesture = false
-                geolocationEnabled = false
                 
                 // Privacy
                 setGeolocationEnabled(false)
