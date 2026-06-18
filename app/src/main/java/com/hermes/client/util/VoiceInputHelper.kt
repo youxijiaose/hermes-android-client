@@ -166,10 +166,6 @@ class TTSHelper(
                 isSpeaking = false
             }
 
-            @Deprecated("Deprecated in Java")
-            override fun onStarterDone(utteranceId: String?) {
-                // No-op
-            }
         })
 
         textToSpeech?.speak(text, TextToSpeech.QUEUE_FLUSH, null, null)

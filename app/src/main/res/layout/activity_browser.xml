@@ -31,7 +31,7 @@
                 android:layout_width="48dp"
                 android:layout_height="48dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@android:drawable/ic_menu_forward"
+                android:src="@android:drawable/ic_menu_revert"
                 android:contentDescription="Go forward" />
 
             <ImageButton
@@ -55,7 +55,7 @@
                 android:layout_width="48dp"
                 android:layout_height="48dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@android:drawable/ic_menu_mapmode"
+                android:src="@android:drawable/ic_menu_myplaces"
                 android:contentDescription="Home" />
 
             <EditText

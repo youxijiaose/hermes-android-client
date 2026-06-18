@@ -17,7 +17,8 @@ sealed class Message {
         override val role: String = "assistant",
         override val content: String? = null,
         override val timestamp: Long = System.currentTimeMillis(),
-        val toolCalls: List<ToolCall>? = null
+        val toolCalls: List<ToolCall>? = null,
+        val thinking: String? = null
     ) : Message()
     
     data class ToolMessage(

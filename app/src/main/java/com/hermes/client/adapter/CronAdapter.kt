@@ -44,8 +44,8 @@ class CronAdapter(
         holder.name.text = job.name ?: job.id
         holder.schedule.text = job.schedule
         holder.prompt.text = job.prompt.take(50) + if (job.prompt.length > 50) "..." else ""
-        holder.lastRun.text = job.last_run?.let { TimeUtils.formatRelativeTime(itemView.context, it) } ?: "Never"
-        holder.nextRun.text = job.next_run?.let { TimeUtils.formatRelativeTime(itemView.context, it) } ?: "N/A"
+        holder.lastRun.text = job.last_run?.let { TimeUtils.formatRelativeTime(holder.itemView.context, it) } ?: "Never"
+        holder.nextRun.text = job.next_run?.let { TimeUtils.formatRelativeTime(holder.itemView.context, it) } ?: "N/A"
         
         holder.toggle.isChecked = job.enabled
         holder.toggle.setOnCheckedChangeListener { _, isChecked ->

@@ -32,18 +32,18 @@ class UpdateManager(private val context: Context) {
             val currentVersion = getCurrentVersionInfo()
             val updateInfo = api?.getUpdateInfo()
             
-            updateInfo?.onSuccess { info ->
-                if (info.versionCode > currentVersion.versionCode) {
-                    return@checkForUpdates info
+            updateInfo?.fold(
+                onSuccess = { info ->
+                    if (info.versionCode > currentVersion.versionCode) info else null
+                },
+                onFailure = { error ->
+                    Log.e(TAG, "Failed to check for updates: ${error.message}")
+                    null
                 }
-                return@checkForUpdates null
-            }?.onFailure {
-                Log.e(TAG, "Failed to check for updates: ${it.message}")
-                return@checkForUpdates null
-            }
+            )
         } catch (e: Exception) {
             Log.e(TAG, "Error checking for updates", e)
-            return@checkForUpdates null
+            return null
         }
     }
 

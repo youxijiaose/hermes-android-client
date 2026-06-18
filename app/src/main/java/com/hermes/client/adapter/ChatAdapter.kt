@@ -9,10 +9,9 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.hermes.client.R
-import com.hermes.client.model.AssistantMessage
 import com.hermes.client.model.Message
-import com.hermes.client.model.ToolMessage
-import com.hermes.client.model.UserMessage
+
+
 import com.hermes.client.util.TimeUtils
 import com.hermes.client.util.setMarkdown
 
@@ -26,9 +25,9 @@ class ChatAdapter : ListAdapter<Message, RecyclerView.ViewHolder>(MessageDiffCal
 
     override fun getItemViewType(position: Int): Int {
         return when (getItem(position)) {
-            is UserMessage -> VIEW_TYPE_USER
-            is AssistantMessage -> VIEW_TYPE_ASSISTANT
-            is ToolMessage -> VIEW_TYPE_TOOL
+            is Message.UserMessage -> VIEW_TYPE_USER
+            is Message.AssistantMessage -> VIEW_TYPE_ASSISTANT
+            is Message.ToolMessage -> VIEW_TYPE_TOOL
             else -> VIEW_TYPE_ASSISTANT
         }
     }
@@ -49,9 +48,9 @@ class ChatAdapter : ListAdapter<Message, RecyclerView.ViewHolder>(MessageDiffCal
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         when (holder) {
-            is UserViewHolder -> holder.bind(getItem(position) as UserMessage)
-            is AssistantViewHolder -> holder.bind(getItem(position) as AssistantMessage)
-            is ToolViewHolder -> holder.bind(getItem(position) as ToolMessage)
+            is UserViewHolder -> holder.bind(getItem(position) as Message.UserMessage)
+            is AssistantViewHolder -> holder.bind(getItem(position) as Message.AssistantMessage)
+            is ToolViewHolder -> holder.bind(getItem(position) as Message.ToolMessage)
         }
     }
 
@@ -63,7 +62,7 @@ class ChatAdapter : ListAdapter<Message, RecyclerView.ViewHolder>(MessageDiffCal
             // 添加时间视图到布局（需要修改布局文件）
         }
 
-        fun bind(message: UserMessage) {
+        fun bind(message: Message.UserMessage) {
             textView.setMarkdown(message.content ?: "")
             timeView.text = TimeUtils.formatRelativeTime(itemView.context, message.timestamp)
         }
@@ -79,7 +78,7 @@ class ChatAdapter : ListAdapter<Message, RecyclerView.ViewHolder>(MessageDiffCal
             // 添加思考块视图
         }
 
-        fun bind(message: AssistantMessage) {
+        fun bind(message: Message.AssistantMessage) {
             if (message.content.isNullOrEmpty()) {
                 progressBar.visibility = View.VISIBLE
                 textView.visibility = View.GONE
@@ -101,7 +100,7 @@ class ChatAdapter : ListAdapter<Message, RecyclerView.ViewHolder>(MessageDiffCal
         private val toolOutput: TextView = itemView.findViewById(R.id.textToolOutput)
         private val timeView: TextView = itemView.findViewById(R.id.timeMessage)
 
-        fun bind(message: ToolMessage) {
+        fun bind(message: Message.ToolMessage) {
             toolName.text = message.toolName ?: "Tool"
             toolOutput.setMarkdown(message.content)
             timeView.text = TimeUtils.formatRelativeTime(itemView.context, message.timestamp)

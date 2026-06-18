@@ -53,10 +53,10 @@ class SkillsViewModel(application: Application) : AndroidViewModel(application) 
         viewModelScope.launch {
             val result = api?.getSkills(category = category)
             _loading.value = false
-            result?.onSuccess { skills ->
+            result?.onSuccess { skills: List<Skill> ->
                 _skills.value = skills
-            }?.onFailure {
-                _error.value = it.message
+            }?.onFailure { error: Throwable ->
+                _error.value = error.message
             }
         }
     }
@@ -64,7 +64,7 @@ class SkillsViewModel(application: Application) : AndroidViewModel(application) 
     fun loadCategories() {
         viewModelScope.launch {
             val result = api?.getSkillCategories()
-            result?.onSuccess { categories ->
+            result?.onSuccess { categories: List<SkillCategory> ->
                 _categories.value = categories
             }
         }
@@ -80,10 +80,10 @@ class SkillsViewModel(application: Application) : AndroidViewModel(application) 
         viewModelScope.launch {
             val result = api?.installSkill(id)
             _installing.value = null
-            result?.onSuccess {
+            result?.onSuccess { skill: Skill ->
                 refresh()
-            }?.onFailure {
-                _error.value = it.message
+            }?.onFailure { error: Throwable ->
+                _error.value = error.message
             }
         }
     }
@@ -93,10 +93,10 @@ class SkillsViewModel(application: Application) : AndroidViewModel(application) 
         viewModelScope.launch {
             val result = api?.uninstallSkill(id)
             _installing.value = null
-            result?.onSuccess {
+            result?.onSuccess { success: Boolean ->
                 refresh()
-            }?.onFailure {
-                _error.value = it.message
+            }?.onFailure { error: Throwable ->
+                _error.value = error.message
             }
         }
     }
@@ -104,8 +104,8 @@ class SkillsViewModel(application: Application) : AndroidViewModel(application) 
     fun togglePin(id: String) {
         viewModelScope.launch {
             val result = api?.togglePinSkill(id)
-            result?.onFailure {
-                _error.value = it.message
+            result?.onFailure { error: Throwable ->
+                _error.value = error.message
             }
             refresh()
         }
@@ -118,10 +118,10 @@ class SkillsViewModel(application: Application) : AndroidViewModel(application) 
             return
         }
 
-        val filtered = allSkills.filter { skill ->
+        val filtered = allSkills.filter { skill: Skill ->
             skill.name.contains(query, ignoreCase = true) ||
                     skill.description.contains(query, ignoreCase = true) ||
-                    skill.tags?.any { it.contains(query, ignoreCase = true) } == true
+                    skill.tags?.any { tag: String -> tag.contains(query, ignoreCase = true) } == true
         }
         _skills.value = filtered
     }

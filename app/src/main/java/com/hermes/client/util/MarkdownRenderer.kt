@@ -3,8 +3,8 @@ package com.hermes.client.util
 import android.text.Html
 import android.text.Spanned
 import android.text.style.*
-    import android.widget.TextView
-    import java.util.regex.Pattern
+import android.widget.TextView
+import java.util.regex.Pattern
 
 /**
  * 轻量级 Markdown 渲染器
@@ -16,7 +16,7 @@ object MarkdownRenderer {
     private val INLINE_CODE_PATTERN = Pattern.compile("`([^`]+)`")
     private val BOLD_PATTERN = Pattern.compile("\\*\\*([^*]+)\\*\\*|__([^_]+)__")
     private val ITALIC_PATTERN = Pattern.compile("\\*([^*]+)\\*|_([^_]+)_")
-    private val LINK_PATTERN = Pattern.compile("\\[([^\\]]+)\\]\\(([^)]+)\\)")
+    private val LINK_PATTERN = Pattern.compile("\\[([^\\]]+)\\]\\\\(([^)]+)\\)")
     private val HEADER_PATTERN = Pattern.compile("^(#{1,6})\\s+(.+)$", Pattern.MULTILINE)
     private val BLOCKQUOTE_PATTERN = Pattern.compile("^>\\s*(.+)$", Pattern.MULTILINE)
     private val UNORDERED_LIST_PATTERN = Pattern.compile("^[-*+]\\s+(.+)$", Pattern.MULTILINE)

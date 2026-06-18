@@ -8,6 +8,16 @@ import org.json.JSONObject
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 
+// Update info data class
+data class UpdateInfo(
+    val versionCode: Long,
+    val versionName: String,
+    val apkUrl: String,
+    val releaseNotes: String? = null,
+    val mandatory: Boolean = false,
+    val publishedAt: Long
+)
+
 class HermesApi(private val baseUrl: String, private val apiKey: String) {
     
     private val client = OkHttpClient.Builder()
@@ -64,7 +74,7 @@ class HermesApi(private val baseUrl: String, private val apiKey: String) {
         
         websocketClient.newWebSocket(webSocketRequest, object : okhttp3.WebSocketListener() {
             override fun onOpen(webSocket: WebSocket, response: Response) {
-                webSocket.send(body)
+                webSocket.send(body.toString())
                 listener.onOpen()
             }
             
@@ -93,7 +103,7 @@ class HermesApi(private val baseUrl: String, private val apiKey: String) {
         
         listener.onSocketReady(websocketClient.newWebSocket(webSocketRequest, object : okhttp3.WebSocketListener() {
             override fun onOpen(webSocket: WebSocket, response: Response) {
-                webSocket.send(body)
+                webSocket.send(body.toString())
                 listener.onOpen()
             }
             override fun onMessage(webSocket: WebSocket, text: String) {
@@ -457,29 +467,6 @@ class HermesApi(private val baseUrl: String, private val apiKey: String) {
             Result.failure(e)
         }
     }
-}
-
-// WebSocket listener interface
-interface WebSocketListener {
-    fun onOpen()
-    fun onMessage(response: ChatResponse)
-    fun onError(error: Throwable)
-    fun onClosed()
-    fun onSocketReady(socket: WebSocket)
-}
-
-// Simple JSON serializer
-object GsonSerializer {
-    private val gson = com.google.gson.GsonBuilder().create()
-    
-    fun <T> parse(json: String, clazz: Class<T>): T {
-        return gson.fromJson(json, clazz)
-    }
-    
-    fun <T> toJson(obj: T): String {
-        return gson.toJson(obj)
-    }
-}
 
     // Skills endpoints
     suspend fun getSkills(category: String? = null, installed: Boolean? = null): Result<List<Skill>> {
@@ -699,3 +686,26 @@ object GsonSerializer {
             Result.failure(e)
         }
     }
+}
+
+// WebSocket listener interface
+interface WebSocketListener {
+    fun onOpen()
+    fun onMessage(response: ChatResponse)
+    fun onError(error: Throwable)
+    fun onClosed()
+    fun onSocketReady(socket: WebSocket)
+}
+
+// Simple JSON serializer
+object GsonSerializer {
+    private val gson = com.google.gson.GsonBuilder().create()
+    
+    fun <T> parse(json: String, clazz: Class<T>): T {
+        return gson.fromJson(json, clazz)
+    }
+    
+    fun <T> toJson(obj: T): String {
+        return gson.toJson(obj)
+    }
+}

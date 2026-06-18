@@ -59,9 +59,9 @@ class SkillsAdapter(
         holder.pinButton.isSelected = skill.pinned
         holder.pinButton.setImageDrawable(
             if (skill.pinned) {
-                itemView.context.getDrawable(android.R.drawable.ic_menu_share)
+                holder.itemView.context.getDrawable(android.R.drawable.ic_menu_share)
             } else {
-                itemView.context.getDrawable(android.R.drawable.ic_menu_agenda)
+                holder.itemView.context.getDrawable(android.R.drawable.ic_menu_agenda)
             }
         )
 

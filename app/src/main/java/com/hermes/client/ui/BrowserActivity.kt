@@ -12,6 +12,8 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import android.content.DialogInterface
+import androidx.appcompat.app.AlertDialog
 import com.hermes.client.databinding.ActivityBrowserBinding
 
 class BrowserActivity : AppCompatActivity() {
@@ -47,7 +49,7 @@ class BrowserActivity : AppCompatActivity() {
         override fun onReceivedHttpError(
             view: WebView?,
             request: WebResourceRequest?,
-            errorResponse: HttpError?
+            errorResponse: WebResourceResponse?
         ) {
             super.onReceivedHttpError(view, request, errorResponse)
             binding.progressBar.visibility = View.GONE
@@ -69,7 +71,7 @@ class BrowserActivity : AppCompatActivity() {
         ): Boolean {
             AlertDialog.Builder(this@BrowserActivity)
                 .setMessage(message)
-                .setPositiveButton("OK") { _, _ -> result?.confirm() }
+                .setPositiveButton("OK") { _: DialogInterface, _: Int -> result?.confirm() }
                 .setOnDismissListener { result?.cancel() }
                 .show()
             return true
@@ -83,8 +85,8 @@ class BrowserActivity : AppCompatActivity() {
         ): Boolean {
             AlertDialog.Builder(this@BrowserActivity)
                 .setMessage(message)
-                .setPositiveButton("OK") { _, _ -> result?.confirm() }
-                .setNegativeButton("Cancel") { _, _ -> result?.cancel() }
+                .setPositiveButton("OK") { _: DialogInterface, _: Int -> result?.confirm() }
+                .setNegativeButton("Cancel") { _: DialogInterface, _: Int -> result?.cancel() }
                 .setOnDismissListener { result?.cancel() }
                 .show()
             return true
@@ -104,11 +106,11 @@ class BrowserActivity : AppCompatActivity() {
             AlertDialog.Builder(this@BrowserActivity)
                 .setMessage(message)
                 .setView(input)
-                .setPositiveButton("OK") { _, _ ->
+                .setPositiveButton("OK") { _: DialogInterface, _: Int ->
                     val text = input.text.toString()
                     result?.confirm(text)
                 }
-                .setNegativeButton("Cancel") { _, _ -> result?.cancel() }
+                .setNegativeButton("Cancel") { _: DialogInterface, _: Int -> result?.cancel() }
                 .setOnDismissListener { result?.cancel() }
                 .show()
             return true
@@ -331,7 +333,7 @@ class BrowserActivity : AppCompatActivity() {
         val items = history.items.map { it.url }.toTypedArray()
         AlertDialog.Builder(this)
             .setTitle("History")
-            .setItems(items) { _, which ->
+            .setItems(items) { _: DialogInterface, which: Int ->
                 loadUrl(items[which])
             }
             .setNegativeButton("Close", null)
@@ -369,7 +371,7 @@ class BrowserActivity : AppCompatActivity() {
         AlertDialog.Builder(this)
             .setTitle("Clear Browser Data")
             .setMessage("This will clear cache, cookies, and browsing data. Continue?")
-            .setPositiveButton("Clear") { _, _ ->
+            .setPositiveButton("Clear") { _: DialogInterface, _: Int ->
                 val webSettings = binding.webView.settings
                 webSettings.cacheMode = WebSettings.LOAD_NO_CACHE
                 binding.webView.clearCache(true)

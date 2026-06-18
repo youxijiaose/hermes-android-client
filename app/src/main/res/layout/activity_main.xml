@@ -119,7 +119,7 @@
                     android:layout_gravity="center_vertical"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:contentDescription="Attach file"
-                    android:src="@android:drawable/ic_menu_attach"
+                    android:src="@android:drawable/ic_menu_upload"
                     app:tint="@color/primary" />
 
                 <EditText

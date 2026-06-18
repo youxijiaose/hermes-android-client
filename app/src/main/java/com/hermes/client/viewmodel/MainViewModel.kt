@@ -68,7 +68,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
 
         val messages = _messages.value ?: return
-        messages.add(UserMessage(content = content))
+        messages.add(Message.UserMessage(content = content))
         _messages.value = messages
 
         viewModelScope.launch {
@@ -89,9 +89,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             model = currentModel,
             stream = true
         )
-
-        isStreaming = true
-        val assistantMsg = AssistantMessage()
+        
+        val assistantMsg = Message.AssistantMessage()
         _messages.value?.add(assistantMsg)
         _messages.value = _messages.value
 
@@ -99,8 +98,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             override fun onOpen() {}
             override fun onMessage(response: ChatResponse) {
                 response.choices?.firstOrNull()?.message?.content?.let { content ->
-                    assistantMsg.content = (assistantMsg.content ?: "") + content
-                    _messages.value = _messages.value
+                    // Update the content by replacing the message in the list
+                    val index = _messages.value?.indexOf(assistantMsg) ?: -1
+                    if (index >= 0) {
+                        val updatedMsg = assistantMsg.copy(content = (assistantMsg.content ?: "") + content)
+                        _messages.value?.set(index, updatedMsg)
+                        _messages.value = _messages.value
+                    }
                 }
             }
             override fun onError(error: Throwable) {

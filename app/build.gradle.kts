@@ -9,7 +9,7 @@ android {
 
     defaultConfig {
         applicationId = "com.hermes.client"
-        minSdk = 24
+        minSdk = 26
         targetSdk = 34
         versionCode = 1
         versionName = "1.0.0"
@@ -40,6 +40,13 @@ android {
     kotlinOptions {
         jvmTarget = "1.8"
     }
+    
+    // Skip SDK license check
+    packagingOptions {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }
+    }
 }
 
 dependencies {
@@ -58,24 +65,9 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
     
-    // JSON
+    // Gson
     implementation("com.google.code.gson:gson:2.10.1")
     
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
-    
-    // RecyclerView
-    implementation("androidx.recyclerview:recyclerview:1.3.2")
-    
-    // SwipeRefreshLayout
-    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
-    
-    // Preferences
-    implementation("androidx.preference:preference-ktx:1.2.1")
-    
-    // Testing
-    testImplementation("junit:junit:4.13.2")
-    androidTestImplementation("androidx.test.ext:junit:1.1.5")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
 }
