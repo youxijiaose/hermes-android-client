@@ -52,7 +52,7 @@ class MainActivity : AppCompatActivity() {
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
         fileAttachmentHelper?.handleActivityResult(
-            result.requestCode,
+            0,  // requestCode not available with registerForActivityResult
             result.resultCode,
             result.data
         )

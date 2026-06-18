@@ -6,7 +6,6 @@ import android.net.Uri
 import android.os.Build
 import android.util.Log
 import com.hermes.client.api.HermesApi
-import com.hermes.client.api.UpdateInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -28,13 +27,13 @@ class UpdateManager(private val context: Context) {
     /**
      * Check for available updates from the Hermes API Server
      */
-    suspend fun checkForUpdates(): api.UpdateInfo? {
+    suspend fun checkForUpdates(): UpdateInfo? {
         return try {
             val currentVersion = getCurrentVersionInfo()
             val updateInfo = api?.getUpdateInfo()
             
             updateInfo?.fold(
-                onSuccess = { info: api.UpdateInfo ->
+                onSuccess = { info ->
                     if (info.versionCode > currentVersion.versionCode) info else null
                 },
                 onFailure = { error ->
