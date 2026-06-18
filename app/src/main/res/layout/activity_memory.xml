@@ -102,8 +102,6 @@
 
             </FrameLayout>
 
-        </FrameLayout>
-
     </LinearLayout>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
