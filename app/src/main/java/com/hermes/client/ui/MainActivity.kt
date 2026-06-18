@@ -104,10 +104,6 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(this, SessionsActivity::class.java))
         }
 
-        binding.swipeRefresh.setOnRefreshListener {
-            viewModel.refreshChat()
-            binding.swipeRefresh.isRefreshing = false
-        }
     }
 
     private fun setupHelpers() {
