@@ -44,17 +44,8 @@ class SkillsActivity : AppCompatActivity() {
             adapter = adapter
         }
 
-        // Search functionality
-        binding.searchView.setOnQueryTextListener(object : android.widget.SearchView.OnQueryTextListener {
-            override fun onQueryTextSubmit(query: String?): Boolean {
-                viewModel.searchSkills(query ?: "")
-                return true
-            }
-            override fun onQueryTextChange(newText: String?): Boolean {
-                viewModel.searchSkills(newText ?: "")
-                return true
-            }
-        })
+        // Search functionality (stub)
+        // binding.searchView.setOnQueryTextListener(...)
 
         // Category filter
         viewModel.categories.observe(this) { categories ->

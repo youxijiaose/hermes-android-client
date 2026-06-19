@@ -18,11 +18,11 @@ class MarkdownRenderer {
         private val INLINE_CODE_PATTERN = Pattern.compile("`([^`]+)`")
         private val BOLD_PATTERN = Pattern.compile("**([^*]+)**")
         private val ITALIC_PATTERN = Pattern.compile("*([^*]+)*")
-        private val LINK_PATTERN = Pattern.compile("[([^\]]+)]\(([^\\)]+)\)")
+        private val LINK_PATTERN = Pattern.compile("\\[([^\\]]+)\\]\\(([^\\)]+)\\)")
         private val HEADER_PATTERN = Pattern.compile("^#{1,6}\\s+(.+)$", Pattern.MULTILINE)
         private val BLOCKQUOTE_PATTERN = Pattern.compile("^>\\s*(.+)$", Pattern.MULTILINE)
         private val UNORDERED_LIST_PATTERN = Pattern.compile("^[-*+]\\s+(.+)$", Pattern.MULTILINE)
-        private val ORDERED_LIST_PATTERN = Pattern.compile("^\\d+\.\\s+(.+)$", Pattern.MULTILINE)
+        private val ORDERED_LIST_PATTERN = Pattern.compile("^\\d+.\\s+(.+)$", Pattern.MULTILINE)
         private val HORIZONTAL_RULE_PATTERN = Pattern.compile("^---+$", Pattern.MULTILINE)
 
         fun renderMarkdown(text: String, textView: TextView) {
@@ -56,7 +56,7 @@ class MarkdownRenderer {
             }
 
             // 5. 链接
-            result = result.replace(Regex("[([^\]]+)]\(([^\\)]+)\)")) { match ->
+            result = result.replace(Regex("[([^]]+)](([^\)]+))")) { match ->
                 "<a href=\"${match.groupValues[2]}\">${match.groupValues[1]}</a>"
             }
 
@@ -77,7 +77,7 @@ class MarkdownRenderer {
             }
 
             // 9. 有序列表
-            result = result.replace(Regex("^\\d+\.\\s+(.+)$", RegexOption.MULTILINE)) { match ->
+            result = result.replace(Regex("^\\d+.\\s+(.+)$", RegexOption.MULTILINE)) { match ->
                 "<li>${match.groupValues[1]}</li>"
             }
 
