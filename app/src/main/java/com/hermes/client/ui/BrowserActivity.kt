@@ -384,7 +384,8 @@ class BrowserActivity : AppCompatActivity() {
         super.onDestroy()
         // Properly clean up WebView to prevent memory leaks
         binding.webView.apply {
-            webViewClient = null
+            // Remove callbacks to prevent memory leaks
+            webViewClient = object : WebViewClient() {}
             webChromeClient = null
             destroy()
         }
