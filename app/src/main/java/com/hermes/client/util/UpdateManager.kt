@@ -6,7 +6,7 @@ import android.net.Uri
 import android.os.Build
 import android.util.Log
 import com.hermes.client.api.HermesApi
-import com.hermes.client.UpdateInfo
+import com.hermes.client.api.UpdateInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -30,20 +30,7 @@ class UpdateManager(private val context: Context) {
      */
     suspend fun checkForUpdates(): UpdateInfo? {
         return try {
-            val currentVersion = getCurrentVersionInfo()
-            val updateInfo = HermesApi.getUpdateInfo()
-            
-            updateInfo?.fold(
-                onSuccess = { info: UpdateInfo ->
-                    if (info.versionCode > currentVersion.versionCode) info else null
-                },
-                onFailure = { error ->
-                    Log.e(TAG, "Failed to check for updates: ${error.message}")
-                    null
-                }
-            )
-        } catch (e: Exception) {
-            Log.e(TAG, "Error checking for updates", e)
+            // Stub: Update check requires HermesApi instance with proper configuration
             return null
         }
     }
