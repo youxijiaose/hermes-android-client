@@ -56,7 +56,7 @@ class MarkdownRenderer {
             }
 
             // 5. 链接
-            result = result.replace(Regex("[([^]]+)](([^\)]+))")) { match ->
+            result = result.replace(Regex("\\[([^\\]]+)\\]\\(([^\\)]+)\\)")) { match ->
                 "<a href=\"${match.groupValues[2]}\">${match.groupValues[1]}</a>"
             }
 
