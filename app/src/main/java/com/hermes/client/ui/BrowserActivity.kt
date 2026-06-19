@@ -382,7 +382,12 @@ class BrowserActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        binding.webView.destroy()
+        // Properly clean up WebView to prevent memory leaks
+        binding.webView.apply {
+            webViewClient = null
+            webChromeClient = null
+            destroy()
+        }
     }
 
     // JavaScript interface for Hermes integration
