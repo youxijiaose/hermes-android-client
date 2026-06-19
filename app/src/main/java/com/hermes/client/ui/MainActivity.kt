@@ -17,6 +17,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
+import android.util.Log
 import com.hermes.client.R
 import com.hermes.client.adapter.ChatAdapter
 import com.hermes.client.api.WebSocketListener
@@ -59,22 +60,31 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        Log.d("HERMES_DEBUG", "=== MainActivity.onCreate START ===")
         super.onCreate(savedInstanceState)
+        Log.d("HERMES_DEBUG", "After super.onCreate")
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         setupViewModel()
+        Log.d("HERMES_DEBUG", "setupViewModel done")
         setupUI()
+        Log.d("HERMES_DEBUG", "setupUI done")
         setupHelpers()
+        Log.d("HERMES_DEBUG", "setupHelpers done")
         setupObservers()
+        Log.d("HERMES_DEBUG", "setupObservers done")
         loadTheme()
+        Log.d("HERMES_DEBUG", "=== MainActivity.onCreate END ===")
     }
 
-    private fun setupViewModel() {
+    private fun setupViewModel()
+        Log.d("HERMES_DEBUG", "setupViewModel done") {
         viewModel = ViewModelProvider(this)[MainViewModel::class.java]
     }
 
-    private fun setupUI() {
+    private fun setupUI()
+        Log.d("HERMES_DEBUG", "setupUI done") {
         setSupportActionBar(binding.toolbar)
 
         chatAdapter = ChatAdapter()
@@ -106,7 +116,8 @@ class MainActivity : AppCompatActivity() {
 
     }
 
-    private fun setupHelpers() {
+    private fun setupHelpers()
+        Log.d("HERMES_DEBUG", "setupHelpers done") {
         voiceInputHelper = VoiceInputHelper(
             activity = this,
             onSpeechResult = { text ->
@@ -132,7 +143,8 @@ class MainActivity : AppCompatActivity() {
         notificationHelper = NotificationHelper(this)
     }
 
-    private fun setupObservers() {
+    private fun setupObservers()
+        Log.d("HERMES_DEBUG", "setupObservers done") {
         viewModel.messages.observe(this) { messages ->
             chatAdapter.submitList(messages)
             if (messages.isNotEmpty()) {
@@ -209,7 +221,8 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun loadTheme() {
+    private fun loadTheme()
+        Log.d("HERMES_DEBUG", "=== MainActivity.onCreate END ===") {
         val prefs = getSharedPreferences("hermes_prefs", MODE_PRIVATE)
         val theme = prefs.getString("theme", ThemeManager.THEME_SYSTEM) ?: ThemeManager.THEME_SYSTEM
         ThemeManager.applyTheme(this, theme)
@@ -253,6 +266,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        Log.d("HERMES_DEBUG", "=== MainActivity.onDestroy ===")
         super.onDestroy()
         voiceInputHelper?.destroy()
         notificationHelper?.cancelNotification()
