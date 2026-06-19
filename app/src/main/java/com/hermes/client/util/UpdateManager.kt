@@ -29,10 +29,8 @@ class UpdateManager(private val context: Context) {
      * Check for available updates from the Hermes API Server
      */
     suspend fun checkForUpdates(): UpdateInfo? {
-        return try {
-            // Stub: Update check requires HermesApi instance with proper configuration
-            return null
-        }
+        // Stub: Update check requires HermesApi instance with proper configuration
+        return null
     }
 
     /**
