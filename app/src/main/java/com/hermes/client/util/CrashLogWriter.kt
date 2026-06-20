@@ -85,20 +85,8 @@ object CrashLogWriter {
     }
     
     private fun getProcessName(context: Context): String {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            try {
-                Build.getProcessName()
-            } catch (e: Exception) {
-                context.packageName
-            }
-        } else {
-            // Fallback for older Android versions
-            try {
-                val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as? android.app.ActivityManager
-                activityManager?.runningAppProcesses?.firstOrNull { it.pid == android.os.Process.myPid() }?.processName ?: context.packageName
-            } catch (e: Exception) {
-                context.packageName
-            }
-        }
+        // 简化实现：直接返回包名
+        // Build.getProcessName() 在 Android SDK 中不可用
+        return context.packageName
     }
 }
