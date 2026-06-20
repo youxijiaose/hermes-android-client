@@ -1,12 +1,14 @@
 package com.hermes.client.viewmodel
 
 import android.app.Application
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.hermes.client.api.HermesApi
 import com.hermes.client.model.*
+import com.hermes.client.util.CrashLogWriter
 import kotlinx.coroutines.launch
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
@@ -28,9 +30,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     
     private var currentModel = prefs.getString("model", "default") ?: "default"
     private var isStreaming = false
+    
+    companion object {
+        private const val TAG = "MainViewModel"
+    }
 
     init {
-        checkConnection()
+        try {
+            CrashLogWriter.writeLog(application, "VIEWMODEL_INIT_START", "MainViewModel initializing")
+            checkConnection()
+            CrashLogWriter.writeLog(application, "VIEWMODEL_INIT_SUCCESS", "MainViewModel initialized successfully")
+        } catch (e: Exception) {
+            CrashLogWriter.writeCrashLog(application, "VIEWMODEL_INIT_EXCEPTION", e)
+            throw e
+        }
     }
 
     sealed class ConnectionState {

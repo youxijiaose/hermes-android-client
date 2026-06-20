@@ -22,6 +22,7 @@ import com.hermes.client.R
 import com.hermes.client.adapter.ChatAdapter
 import com.hermes.client.api.WebSocketListener
 import com.hermes.client.databinding.ActivityMainBinding
+import com.hermes.client.util.CrashLogWriter
 import com.hermes.client.util.FileAttachmentHelper
 import com.hermes.client.util.NotificationHelper
 import com.hermes.client.util.ThemeManager
@@ -38,6 +39,10 @@ class MainActivity : AppCompatActivity() {
     private var fileAttachmentHelper: FileAttachmentHelper? = null
     private var notificationHelper: NotificationHelper? = null
     private var isRecording = false
+    
+    companion object {
+        private const val TAG = "MainActivity"
+    }
 
     // Permission launcher
     private val requestPermissionLauncher = registerForActivityResult(
@@ -60,15 +65,25 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+        // 记录启动日志
+        CrashLogWriter.writeLog(this, "ON_CREATE_START", "MainActivity.onCreate starting")
+        
+        try {
+            super.onCreate(savedInstanceState)
+            binding = ActivityMainBinding.inflate(layoutInflater)
+            setContentView(binding.root)
 
-        setupViewModel()
-        setupUI()
-        setupHelpers()
-        setupObservers()
-        loadTheme()
+            setupViewModel()
+            setupUI()
+            setupHelpers()
+            setupObservers()
+            loadTheme()
+            
+            CrashLogWriter.writeLog(this, "ON_CREATE_SUCCESS", "MainActivity created successfully")
+        } catch (e: Exception) {
+            CrashLogWriter.writeCrashLog(this, "ON_CREATE_EXCEPTION", e)
+            throw e  // 重新抛出让系统处理
+        }
     }
 
     private fun setupViewModel() {
