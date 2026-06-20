@@ -91,8 +91,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupUI() {
-        setSupportActionBar(binding.toolbar)
-
+        // setSupportActionBar removed - using Toolbar directly, not ActionBar
+        
         chatAdapter = ChatAdapter()
         binding.recyclerChat.apply {
             layoutManager = LinearLayoutManager(this@MainActivity).apply {
