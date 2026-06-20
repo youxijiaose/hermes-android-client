@@ -57,7 +57,7 @@ object CrashLogWriter {
     fun writeLog(context: Context, tag: String, message: String) {
         val logFile = getLogFile(context)
         val writer = FileWriter(logFile, true)
-        writer.println("[${getTimestamp()}] [$tag] $message")
+        writer.append("[${getTimestamp()}] [$tag] $message\n")
         writer.flush()
         writer.close()
     }
@@ -86,13 +86,16 @@ object CrashLogWriter {
     
     private fun getProcessName(context: Context): String {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            Build.getProcessName()
+            try {
+                Build.getProcessName()
+            } catch (e: Exception) {
+                context.packageName
+            }
         } else {
             // Fallback for older Android versions
             try {
-                Class.forName("android.app.ActivityManager")
-                    .getDeclaredMethod("getProcessName")
-                    .invoke(null, context.packageName) as? String ?: context.packageName
+                val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as? android.app.ActivityManager
+                activityManager?.runningAppProcesses?.firstOrNull { it.pid == android.os.Process.myPid() }?.processName ?: context.packageName
             } catch (e: Exception) {
                 context.packageName
             }
