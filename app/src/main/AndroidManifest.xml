@@ -66,6 +66,7 @@
             android:name=".ui.SettingsActivity"
             android:exported="false"
             android:label="@string/settings"
+            android:theme="@style/Theme.HermesClient"
             android:parentActivityName=".ui.MainActivity" />
             
         <activity
