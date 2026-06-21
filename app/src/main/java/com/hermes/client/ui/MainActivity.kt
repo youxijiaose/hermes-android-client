@@ -65,8 +65,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        // 记录启动日志
-        CrashLogWriter.writeLog(this, "ON_CREATE_START", "MainActivity.onCreate starting")
+        // 记录启动日志 - 使用 try-catch 防止日志写入失败导致崩溃
+        try {
+            CrashLogWriter.writeLog(this, "ON_CREATE_START", "MainActivity.onCreate starting")
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "Failed to write ON_CREATE_START log", e)
+        }
         
         try {
             super.onCreate(savedInstanceState)

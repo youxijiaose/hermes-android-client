@@ -34,32 +34,43 @@ object CrashLogWriter {
     
     fun writeCrashLog(context: Context, errorType: String, throwable: Throwable) {
         val logFile = getLogFile(context)
-        val writer = PrintWriter(FileWriter(logFile, true))
-        
-        writer.println("========================================")
-        writer.println("CRASH REPORT - ${getTimestamp()}")
-        writer.println("========================================")
-        writer.println("Error Type: $errorType")
-        writer.println("Message: ${throwable.message}")
-        writer.println("Device: ${Build.MODEL} (Android ${Build.VERSION.RELEASE}, API ${Build.VERSION.SDK_INT})")
-        writer.println("Package: ${context.packageName}")
-        writer.println("Process: ${getProcessName(context)}")
-        writer.println("Thread: ${Thread.currentThread().name} (ID: ${Thread.currentThread().id})")
-        writer.println("----------------------------------------")
-        writer.println("Stack Trace:")
-        throwable.printStackTrace(writer)
-        writer.println("========================================")
-        writer.println()
-        writer.flush()
-        writer.close()
+        try {
+            val writer = PrintWriter(FileWriter(logFile, true))
+            
+            writer.println("========================================")
+            writer.println("CRASH REPORT - ${getTimestamp()}")
+            writer.println("========================================")
+            writer.println("Error Type: $errorType")
+            writer.println("Message: ${throwable.message}")
+            writer.println("Device: ${Build.MODEL} (Android ${Build.VERSION.RELEASE}, API ${Build.VERSION.SDK_INT})")
+            writer.println("Package: ${context.packageName}")
+            writer.println("Process: ${getProcessName(context)}")
+            writer.println("Thread: ${Thread.currentThread().name} (ID: ${Thread.currentThread().id})")
+            writer.println("----------------------------------------")
+            writer.println("Stack Trace:")
+            throwable.printStackTrace(writer)
+            writer.println("========================================")
+            writer.println()
+            writer.flush()
+            writer.close()
+        } catch (e: Exception) {
+            // Fallback to Android Log - critical for debugging when file I/O fails
+            android.util.Log.e("CrashLogWriter", "CRASH_REPORT_FAILED: $errorType - ${throwable.message}", throwable)
+            android.util.Log.e("CrashLogWriter", "File I/O error: ${e.message}")
+        }
     }
     
     fun writeLog(context: Context, tag: String, message: String) {
         val logFile = getLogFile(context)
-        val writer = FileWriter(logFile, true)
-        writer.append("[${getTimestamp()}] [$tag] $message\n")
-        writer.flush()
-        writer.close()
+        try {
+            val writer = FileWriter(logFile, true)
+            writer.append("[${getTimestamp()}] [$tag] $message\n")
+            writer.flush()
+            writer.close()
+        } catch (e: Exception) {
+            // Fallback to Android Log - critical for debugging when file I/O fails
+            android.util.Log.e("CrashLogWriter", "[$tag] $message (FILE_WRITE_FAILED: ${e.message})")
+        }
     }
     
     private fun getLogFile(context: Context): File {
