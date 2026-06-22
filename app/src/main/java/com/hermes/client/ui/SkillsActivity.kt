@@ -14,7 +14,7 @@ import com.hermes.client.adapter.SkillsAdapter
 import com.hermes.client.databinding.ActivitySkillsBinding
 import com.hermes.client.model.Skill
 import com.hermes.client.viewmodel.SkillsViewModel
-import android.widget.SearchView
+import androidx.appcompat.widget.SearchView
 
 class SkillsActivity : AppCompatActivity() {
 
