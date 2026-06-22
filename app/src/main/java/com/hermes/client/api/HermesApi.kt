@@ -65,16 +65,18 @@ class HermesApi(private val baseUrl: String, private val apiKey: String) {
         listener: WebSocketListener
     ) {
         val request = ChatRequest(messages, model, stream = true)
-        val body = GsonSerializer.toJson(request).toRequestBody(jsonMediaType)
+        val jsonBody = GsonSerializer.toJson(request)
+        val body = jsonBody.toRequestBody(jsonMediaType)
         
         val webSocketRequest = Request.Builder()
             .url("$baseUrl/chat/stream")
             .addHeader("Authorization", "Bearer $apiKey")
             .build()
         
-        websocketClient.newWebSocket(webSocketRequest, object : okhttp3.WebSocketListener() {
+        val webSocket = websocketClient.newWebSocket(webSocketRequest, object : okhttp3.WebSocketListener() {
             override fun onOpen(webSocket: WebSocket, response: Response) {
-                webSocket.send(body.toString())
+                // 发送实际 JSON 字符串，而非 RequestBody.toString()
+                webSocket.send(jsonBody)
                 listener.onOpen()
             }
             
@@ -101,30 +103,7 @@ class HermesApi(private val baseUrl: String, private val apiKey: String) {
             }
         })
         
-        listener.onSocketReady(websocketClient.newWebSocket(webSocketRequest, object : okhttp3.WebSocketListener() {
-            override fun onOpen(webSocket: WebSocket, response: Response) {
-                webSocket.send(body.toString())
-                listener.onOpen()
-            }
-            override fun onMessage(webSocket: WebSocket, text: String) {
-                try {
-                    val data = GsonSerializer.parse(text, ChatResponse::class.java)
-                    listener.onMessage(data)
-                } catch (e: Exception) {
-                    listener.onError(e)
-                }
-            }
-            override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
-                webSocket.close(1000, null)
-                listener.onClosed()
-            }
-            override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
-                listener.onClosed()
-            }
-            override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
-                listener.onError(t)
-            }
-        }))
+        listener.onSocketReady(webSocket)
     }
 
     // Get sessions

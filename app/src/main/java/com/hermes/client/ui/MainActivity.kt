@@ -72,6 +72,9 @@ class MainActivity : AppCompatActivity() {
             android.util.Log.e("MainActivity", "Failed to write ON_CREATE_START log", e)
         }
         
+        // 在 super.onCreate 之前应用主题，确保主题立即生效
+        loadTheme()
+        
         try {
             super.onCreate(savedInstanceState)
             binding = ActivityMainBinding.inflate(layoutInflater)
@@ -81,7 +84,6 @@ class MainActivity : AppCompatActivity() {
             setupUI()
             setupHelpers()
             setupObservers()
-            loadTheme()
             
             CrashLogWriter.writeLog(this, "ON_CREATE_SUCCESS", "MainActivity created successfully")
         } catch (e: Exception) {
