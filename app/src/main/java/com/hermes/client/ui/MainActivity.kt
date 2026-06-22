@@ -116,14 +116,39 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        binding.btnSend.setOnClickListener { sendMessage() }
+        // 所有点击事件统一加 try-catch，避免闪退
+        binding.btnSend.setOnClickListener {
+            safeClick("btnSend") { sendMessage() }
+        }
         binding.btnSettings.setOnClickListener {
-            startActivity(Intent(this, SettingsActivity::class.java))
+            safeClick("btnSettings") {
+                startActivity(Intent(this@MainActivity, SettingsActivity::class.java))
+            }
         }
         binding.btnSessions.setOnClickListener {
-            startActivity(Intent(this, SessionsActivity::class.java))
+            safeClick("btnSessions") {
+                startActivity(Intent(this@MainActivity, SessionsActivity::class.java))
+            }
+        }
+        binding.btnAttach.setOnClickListener {
+            safeClick("btnAttach") {
+                Toast.makeText(this@MainActivity, "Attach file: feature coming soon", Toast.LENGTH_SHORT).show()
+            }
+        }
+        binding.btnVoice.setOnClickListener {
+            safeClick("btnVoice") { toggleVoiceInput() }
         }
 
+    }
+
+    private fun safeClick(buttonName: String, action: () -> Unit) {
+        try {
+            action()
+        } catch (e: Exception) {
+            Log.e(TAG, "Click error on $buttonName: ${e.message}", e)
+            CrashLogWriter.writeCrashLog(this, "CLICK_ERROR_$buttonName", e)
+            Toast.makeText(this, "Button error: ${e.message}", Toast.LENGTH_LONG).show()
+        }
     }
 
     private fun setupHelpers() {
