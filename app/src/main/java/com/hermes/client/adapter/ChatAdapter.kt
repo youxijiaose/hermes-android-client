@@ -72,7 +72,7 @@ class ChatAdapter : ListAdapter<Message, RecyclerView.ViewHolder>(MessageDiffCal
         private val textView: TextView = itemView.findViewById(R.id.textMessage)
         private val timeView: TextView = itemView.findViewById(R.id.timeMessage)
         private val progressBar: ProgressBar = itemView.findViewById(R.id.progressTyping)
-        private val thinkingView: TextView = itemView.findViewById(R.id.thinkingBlock)
+        private val thinkingBlock: android.widget.LinearLayout = itemView.findViewById(R.id.thinkingBlock)
 
         init {
             // 添加思考块视图
@@ -90,8 +90,10 @@ class ChatAdapter : ListAdapter<Message, RecyclerView.ViewHolder>(MessageDiffCal
             timeView.text = TimeUtils.formatRelativeTime(itemView.context, message.timestamp)
             
             // 显示思考块（如果有）
-            thinkingView.visibility = if (message.thinking?.isNotEmpty() == true) View.VISIBLE else View.GONE
-            thinkingView.text = message.thinking
+            thinkingBlock.visibility = if (message.thinking?.isNotEmpty() == true) View.VISIBLE else View.GONE
+            // 更新思考内容
+            val thinkingText = itemView.findViewById<android.widget.TextView>(R.id.textThinking)
+            thinkingText?.text = message.thinking
         }
     }
 
