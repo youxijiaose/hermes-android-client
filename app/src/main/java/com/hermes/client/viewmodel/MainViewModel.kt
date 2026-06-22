@@ -6,44 +6,41 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
+import com.hermes.client.api.GatewayClient
+import com.hermes.client.api.GatewayEvent
 import com.hermes.client.api.HermesApi
 import com.hermes.client.model.*
 import com.hermes.client.util.CrashLogWriter
 import kotlinx.coroutines.launch
+import org.json.JSONObject
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val prefs = application.getSharedPreferences("hermes_prefs", Application.MODE_PRIVATE)
-    
+
     private var api: HermesApi? = null
+    private var activeSessionId: String? = null
+    private var streamingAssistantIndex = -1
+
+    // ── Observables ──
+
     private val _messages = MutableLiveData<MutableList<Message>>(mutableListOf())
     val messages: LiveData<MutableList<Message>> = _messages
-    
+
     private val _connectionState = MutableLiveData<ConnectionState>(ConnectionState.Disconnected)
     val connectionState: LiveData<ConnectionState> = _connectionState
-    
-    private val _error = MutableLiveData<String>()
-    val error: LiveData<String> = _error
-    
+
+    private val _error = MutableLiveData<String?>()
+    val error: LiveData<String?> = _error
+
     private val _pendingApproval = MutableLiveData<ApprovalRequest?>()
     val pendingApproval: LiveData<ApprovalRequest?> = _pendingApproval
-    
-    private var currentModel = prefs.getString("model", "default") ?: "default"
-    private var isStreaming = false
-    
+
+    private val _isStreaming = MutableLiveData(false)
+    val isStreaming: LiveData<Boolean> = _isStreaming
+
     companion object {
         private const val TAG = "MainViewModel"
-    }
-
-    init {
-        try {
-            CrashLogWriter.writeLog(application, "VIEWMODEL_INIT_START", "MainViewModel initializing")
-            checkConnection()
-            CrashLogWriter.writeLog(application, "VIEWMODEL_INIT_SUCCESS", "MainViewModel initialized successfully")
-        } catch (e: Exception) {
-            CrashLogWriter.writeCrashLog(application, "VIEWMODEL_INIT_EXCEPTION", e)
-            throw e
-        }
     }
 
     sealed class ConnectionState {
@@ -52,105 +49,309 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         object Connecting : ConnectionState()
     }
 
-    fun checkConnection() {
-        val serverUrl = prefs.getString("server_url", "http://192.168.1.100:8080") ?: return
-        val apiKey = prefs.getString("api_key", "") ?: return
+    init {
+        try {
+            CrashLogWriter.writeLog(application, "VIEWMODEL_INIT", "MainViewModel init")
+            val serverUrl = prefs.getString("server_url", "http://127.0.0.1:9119")
+                ?: "http://127.0.0.1:9119"
+            Log.d(TAG, "Initializing with server URL: $serverUrl")
+            connect(serverUrl)
+        } catch (e: Exception) {
+            CrashLogWriter.writeCrashLog(application, "VIEWMODEL_INIT_ERROR", e)
+            _error.value = "Init error: ${e.message}"
+        }
+    }
 
-        if (serverUrl.isEmpty() || apiKey.isEmpty()) {
-            _connectionState.value = ConnectionState.Disconnected
-            return
+    // ── Connection ──
+
+    fun connect(serverUrl: String = "http://127.0.0.1:9119") {
+        _connectionState.value = ConnectionState.Connecting
+
+        val newApi = HermesApi(serverUrl)
+        api = newApi
+
+        // Register gateway event listeners
+        newApi.gateway.on("message.delta", ::onMessageDelta)
+        newApi.gateway.on("message.complete", ::onMessageComplete)
+        newApi.gateway.on("thinking.delta", ::onThinkingDelta)
+        newApi.gateway.on("tool.start", ::onToolStart)
+        newApi.gateway.on("tool.complete", ::onToolComplete)
+        newApi.gateway.on("error", ::onGatewayError)
+        newApi.gateway.on("approval.request", ::onApprovalRequest)
+        newApi.gateway.on("clarify.request", ::onClarifyRequest)
+        newApi.gateway.on("session.info", ::onSessionInfo)
+
+        newApi.gateway.onState { state ->
+            when (state) {
+                GatewayClient.State.Open -> {
+                    _connectionState.postValue(ConnectionState.Connected)
+                    // Create a session once connected
+                    createNewSession()
+                }
+                GatewayClient.State.Closed -> {
+                    _connectionState.postValue(ConnectionState.Disconnected)
+                }
+                GatewayClient.State.Error -> {
+                    _connectionState.postValue(ConnectionState.Disconnected)
+                    _error.postValue("Connection failed - is Hermes Dashboard running?")
+                }
+                else -> {}
+            }
         }
 
-        _connectionState.value = ConnectionState.Connecting
-        api = HermesApi(serverUrl, apiKey)
-
         viewModelScope.launch {
-            val result = api?.healthCheck()
-            _connectionState.value = if (result?.isSuccess == true) {
-                ConnectionState.Connected
-            } else {
-                ConnectionState.Disconnected
+            val result = newApi.connect()
+            if (result.isFailure) {
+                _connectionState.value = ConnectionState.Disconnected
+                _error.value = "Connect failed: ${result.exceptionOrNull()?.message}"
             }
         }
     }
 
+    private fun createNewSession() {
+        viewModelScope.launch {
+            val api = api ?: return@launch
+            val result = api.createSession()
+            result.onSuccess { sessionId ->
+                activeSessionId = sessionId
+                addSystemMessage("Session $sessionId ready")
+                CrashLogWriter.writeLog(getApplication(), "SESSION_CREATED", sessionId)
+            }.onFailure { e ->
+                Log.e(TAG, "Failed to create session", e)
+                _error.value = "Session create failed: ${e.message}"
+            }
+        }
+    }
+
+    // ── Sending Messages ──
+
     fun sendMessage(content: String) {
+        val sessionId = activeSessionId ?: return
         if (_connectionState.value != ConnectionState.Connected) {
-            _error.value = "Not connected to server"
+            _error.value = "Not connected - tap to reconnect"
             return
         }
 
-        val messages = _messages.value ?: return
+        if (_isStreaming.value == true) {
+            _error.value = "Still streaming previous response"
+            return
+        }
+
+        // Add user message
+        val messages = _messages.value ?: mutableListOf()
         messages.add(Message.UserMessage(content = content))
         _messages.value = messages
 
+        // Add placeholder for streaming assistant message
+        streamingAssistantIndex = messages.size
+        val assistantPlaceholder = Message.AssistantMessage(content = "")
+        messages.add(assistantPlaceholder)
+        _messages.value = messages
+
+        _isStreaming.value = true
+
         viewModelScope.launch {
-            streamResponse()
+            val api = api ?: return@launch
+            val result = api.submitPrompt(sessionId, content)
+            result.onFailure { e ->
+                Log.e(TAG, "Failed to submit prompt", e)
+                _error.value = "Send failed: ${e.message}"
+                _isStreaming.value = false
+            }
+            // If success, events will handle the streaming
         }
     }
 
-    private suspend fun streamResponse() {
-        val messagesList = _messages.value?.map { msg ->
-            MessageWrapper(
-                role = msg.role,
-                content = msg.content
-            )
-        } ?: return
+    // ── Event Handlers ──
 
-        val request = ChatRequest(
-            messages = messagesList,
-            model = currentModel,
-            stream = true
-        )
-        
-        val assistantMsg = Message.AssistantMessage()
-        _messages.value?.add(assistantMsg)
-        _messages.value = _messages.value
+    private fun onMessageDelta(event: GatewayEvent) {
+        val payload = event.payload ?: return
+        try {
+            val json = JSONObject(payload)
+            val text = json.optString("text", "")
+            if (text.isNotEmpty()) {
+                updateAssistantContent(text)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to parse message.delta", e)
+        }
+    }
 
-        api?.streamChat(messagesList, currentModel, object : com.hermes.client.api.WebSocketListener {
-            override fun onOpen() {}
-            override fun onMessage(response: ChatResponse) {
-                response.choices?.firstOrNull()?.message?.content?.let { content ->
-                    // Update the content by replacing the message in the list
-                    val index = _messages.value?.indexOf(assistantMsg) ?: -1
-                    if (index >= 0) {
-                        val updatedMsg = assistantMsg.copy(content = (assistantMsg.content ?: "") + content)
-                        _messages.value?.set(index, updatedMsg)
-                        _messages.value = _messages.value
+    private fun onMessageComplete(event: GatewayEvent) {
+        _isStreaming.postValue(false)
+        streamingAssistantIndex = -1
+    }
+
+    private fun onThinkingDelta(event: GatewayEvent) {
+        val payload = event.payload ?: return
+        try {
+            val json = JSONObject(payload)
+            val text = json.optString("text", "")
+            if (text.isNotEmpty()) {
+                // Append thinking to the current assistant message
+                val messages = _messages.value ?: return
+                val index = streamingAssistantIndex
+                if (index >= 0 && index < messages.size) {
+                    val msg = messages[index]
+                    if (msg is Message.AssistantMessage) {
+                        val currentThinking = msg.thinking ?: ""
+                        val updatedMsg = msg.copy(thinking = currentThinking + text)
+                        messages[index] = updatedMsg
+                        _messages.postValue(messages)
                     }
                 }
             }
-            override fun onError(error: Throwable) {
-                _error.value = error.message
-                isStreaming = false
-            }
-            override fun onClosed() { isStreaming = false }
-            override fun onSocketReady(socket: okhttp3.WebSocket) {}
-        })
-    }
-
-    fun clearChat() { _messages.value = mutableListOf() }
-    fun refreshChat() {}
-    fun errorShown() { _error.value = null }
-    fun approvalShown() { _pendingApproval.value = null }
-
-    fun submitApproval(approved: Boolean, approvalId: String) {
-        viewModelScope.launch {
-            val response = ApprovalResponse(id = approvalId, approved = approved)
-            api?.submitApproval(response)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to parse thinking.delta", e)
         }
     }
 
-    fun updateModel(model: String) {
-        currentModel = model
-        prefs.edit().putString("model", model).apply()
+    private fun onToolStart(event: GatewayEvent) {
+        val payload = event.payload ?: return
+        try {
+            val json = JSONObject(payload)
+            val toolName = json.optString("name", "tool")
+            val messages = _messages.value ?: return
+            messages.add(Message.ToolMessage(
+                content = "Running: $toolName...",
+                toolName = toolName
+            ))
+            _messages.postValue(messages)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to parse tool.start", e)
+        }
     }
 
-    fun updateServerConfig(serverUrl: String, apiKey: String) {
-        prefs.edit()
-            .putString("server_url", serverUrl)
-            .putString("api_key", apiKey)
-            .apply()
-        checkConnection()
+    private fun onToolComplete(event: GatewayEvent) {
+        val payload = event.payload ?: return
+        try {
+            val json = JSONObject(payload)
+            val toolName = json.optString("name", "tool")
+            val result = json.optString("result", "")
+            // Last tool message - replace with completed status
+            val messages = _messages.value ?: return
+            val toolMsgIndex = messages.indexOfLast { it is Message.ToolMessage }
+            if (toolMsgIndex >= 0) {
+                messages[toolMsgIndex] = Message.ToolMessage(
+                    content = "✅ $toolName: ${result.take(200)}${if (result.length > 200) "…" else ""}",
+                    toolName = toolName
+                )
+                _messages.postValue(messages)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to parse tool.complete", e)
+        }
+    }
+
+    private fun onApprovalRequest(event: GatewayEvent) {
+        val payload = event.payload ?: return
+        try {
+            val json = JSONObject(payload)
+            val approvalRequest = ApprovalRequest(
+                id = json.optString("id"),
+                command = json.optString("command", ""),
+                reason = json.optString("reason"),
+                timestamp = System.currentTimeMillis()
+            )
+            _pendingApproval.postValue(approvalRequest)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to parse approval.request", e)
+        }
+    }
+
+    private fun onClarifyRequest(event: GatewayEvent) {
+        val payload = event.payload ?: return
+        try {
+            val json = JSONObject(payload)
+            _error.postValue("Clarify: ${json.optString("question", "")}")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to parse clarify.request", e)
+        }
+    }
+
+    private fun onGatewayError(event: GatewayEvent) {
+        val payload = event.payload ?: return
+        try {
+            val json = JSONObject(payload)
+            val message = json.optString("message", "Gateway error")
+            _error.postValue(message)
+            _isStreaming.postValue(false)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to parse gateway error", e)
+        }
+    }
+
+    private fun onSessionInfo(event: GatewayEvent) {
+        val payload = event.payload ?: return
+        try {
+            val json = JSONObject(payload)
+            val sessionId = json.optString("session_id")
+            if (!sessionId.isNullOrEmpty()) {
+                activeSessionId = sessionId
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to parse session.info", e)
+        }
+    }
+
+    // ── Helpers ──
+
+    private fun updateAssistantContent(delta: String) {
+        val messages = _messages.value ?: return
+        val index = streamingAssistantIndex
+        if (index >= 0 && index < messages.size) {
+            val msg = messages[index]
+            if (msg is Message.AssistantMessage) {
+                val currentContent = msg.content ?: ""
+                val updatedMsg = msg.copy(content = currentContent + delta)
+                messages[index] = updatedMsg
+                _messages.postValue(messages)
+            }
+        }
+    }
+
+    private fun addSystemMessage(content: String) {
+        val messages = _messages.value ?: mutableListOf()
+        messages.add(Message.SystemMessage(content = content))
+        _messages.value = messages
+    }
+
+    // ── Actions ──
+
+    fun clearChat() {
+        _messages.value = mutableListOf()
+    }
+
+    fun stopStreaming() {
+        val sessionId = activeSessionId ?: return
+        viewModelScope.launch {
+            api?.interruptSession(sessionId)
+            _isStreaming.value = false
+        }
+    }
+
+    fun errorShown() {
+        _error.value = null
+    }
+
+    fun approvalShown() {
+        _pendingApproval.value = null
+    }
+
+    fun submitApproval(approved: Boolean, approvalId: String) {
+        viewModelScope.launch {
+            api?.respondApproval(approvalId, approved)
+        }
+    }
+
+    fun reconnect() {
+        val serverUrl = prefs.getString("server_url", "http://127.0.0.1:9119")
+            ?: "http://127.0.0.1:9119"
+        connect(serverUrl)
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        api?.disconnect()
     }
 }

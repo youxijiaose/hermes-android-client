@@ -1,6 +1,7 @@
 package com.hermes.client.viewmodel
 
 import android.app.Application
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -26,15 +27,9 @@ class SessionsViewModel(application: Application) : AndroidViewModel(application
     private var allSessions: List<SessionInfo> = emptyList()
 
     init {
-        setupApi()
-    }
-
-    private fun setupApi() {
-        val serverUrl = prefs.getString("server_url", "") ?: return
-        val apiKey = prefs.getString("api_key", "") ?: return
-        if (serverUrl.isNotEmpty() && apiKey.isNotEmpty()) {
-            api = HermesApi(serverUrl, apiKey)
-        }
+        val serverUrl = prefs.getString("server_url", "http://127.0.0.1:9119")
+            ?: "http://127.0.0.1:9119"
+        api = HermesApi(serverUrl)
     }
 
     fun refresh() {
@@ -43,10 +38,21 @@ class SessionsViewModel(application: Application) : AndroidViewModel(application
             val result = api?.getSessions()
             _loading.value = false
             result?.onSuccess { sessions ->
-                allSessions = sessions
-                _sessions.value = sessions
+                allSessions = sessions.sortedByDescending { it.updated_at }
+                _sessions.value = allSessions
             }?.onFailure {
-                _error.value = it.message
+                _error.value = it.message ?: "Failed to load sessions"
+            }
+        }
+    }
+
+    fun deleteSession(sessionId: String) {
+        viewModelScope.launch {
+            val result = api?.deleteSession(sessionId)
+            result?.onSuccess {
+                refresh()
+            }?.onFailure {
+                _error.value = "Delete failed: ${it.message}"
             }
         }
     }
@@ -67,8 +73,13 @@ class SessionsViewModel(application: Application) : AndroidViewModel(application
     fun createNewSession() {
         _loading.value = true
         viewModelScope.launch {
-            // Implementation depends on API
+            val result = api?.createSession()
             _loading.value = false
+            result?.onSuccess {
+                refresh()
+            }?.onFailure {
+                _error.value = "Create failed: ${it.message}"
+            }
         }
     }
 }

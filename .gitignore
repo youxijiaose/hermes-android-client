@@ -33,3 +33,6 @@ Thumbs.db
 .env
 *.env
 secrets.properties
+
+# Termux build output
+build-output/

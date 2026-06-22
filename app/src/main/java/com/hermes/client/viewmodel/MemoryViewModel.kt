@@ -39,9 +39,8 @@ class MemoryViewModel(application: Application) : AndroidViewModel(application) 
 
     private fun setupApi() {
         val serverUrl = prefs.getString("server_url", "") ?: return
-        val apiKey = prefs.getString("api_key", "") ?: return
-        if (serverUrl.isNotEmpty() && apiKey.isNotEmpty()) {
-            api = HermesApi(serverUrl, apiKey)
+        if (serverUrl.isNotEmpty()) {
+            api = HermesApi(serverUrl)
         }
     }
 

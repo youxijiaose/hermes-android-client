@@ -6,7 +6,6 @@ import android.net.Uri
 import android.os.Build
 import android.util.Log
 import com.hermes.client.api.HermesApi
-import com.hermes.client.api.UpdateInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -21,8 +20,8 @@ class UpdateManager(private val context: Context) {
     private val prefs = context.getSharedPreferences("hermes_prefs", Context.MODE_PRIVATE)
     private var api: HermesApi? = null
 
-    fun setupApi(baseUrl: String, apiKey: String) {
-        api = HermesApi(baseUrl, apiKey)
+    fun setupApi(baseUrl: String) {
+        api = HermesApi(baseUrl)
     }
 
     /**
