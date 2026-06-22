@@ -9,16 +9,17 @@ import org.json.JSONObject
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 
-/**
- * Hermes Dashboard API client.
- *
- * Dual-channel architecture:
- * - **Gateway WebSocket JSON-RPC** (`/api/ws`) for chat + sessions
- * - **REST** (`/api/sessions`, `/api/audio/*`, `/health`) for session list, voice, health
- *
- * Both point at the same dashboard port (default 9119).
- * The token is auto-discovered from the dashboard's index.html.
- */
+//
+// Hermes Dashboard API client.
+//
+// Dual-channel architecture:
+// - **Gateway WebSocket JSON-RPC** (`/api/ws`) for chat + sessions
+// - **REST** (`/api/sessions`, `/api/audio/speak`, `/api/audio/transcribe`, `/health`)
+//   for session list, voice, health
+//
+// Both point at the same dashboard port (default 9119).
+// The token is auto-discovered from the dashboard's index.html.
+//
 class HermesApi(private val baseUrl: String) {
 
     companion object {
@@ -34,7 +35,7 @@ class HermesApi(private val baseUrl: String) {
     val gateway = GatewayClient()
     private var token: String? = null
 
-    // ── Connection ──
+    // ---- Connection ----
 
     /**
      * Connect to the dashboard gateway.
@@ -53,7 +54,7 @@ class HermesApi(private val baseUrl: String) {
         gateway.close()
     }
 
-    // ── Health / Reachability ──
+    // ---- Health / Reachability ----
 
     suspend fun healthCheck(): Result<Boolean> {
         return try {
@@ -67,7 +68,7 @@ class HermesApi(private val baseUrl: String) {
         }
     }
 
-    // ── Chat (Gateway JSON-RPC) ──
+    // ---- Chat (Gateway JSON-RPC) ----
 
     /**
      * Send a chat message via the gateway WebSocket.
@@ -93,7 +94,7 @@ class HermesApi(private val baseUrl: String) {
         }
     }
 
-    // ── Sessions (REST + Gateway) ──
+    // ---- Sessions (REST + Gateway) ----
 
     suspend fun getSessions(): Result<List<SessionInfo>> {
         return try {
@@ -190,7 +191,7 @@ class HermesApi(private val baseUrl: String) {
         }
     }
 
-    // ── Approval / Clarify / Secret / Sudo ──
+    // ---- Approval / Clarify / Secret / Sudo ----
 
     suspend fun respondApproval(approvalId: String, approved: Boolean): Result<Boolean> {
         return try {
@@ -204,7 +205,7 @@ class HermesApi(private val baseUrl: String) {
         }
     }
 
-    // ── REST audio endpoints ──
+    // ---- REST audio endpoints ----
 
     suspend fun transcribeAudio(dataUrl: String): Result<TranscribeResponse> {
         return try {
@@ -260,7 +261,7 @@ class HermesApi(private val baseUrl: String) {
         }
     }
 
-    // ── Stub methods for legacy features (Skills / Memory / Cron) ──
+    // ---- Stub methods for legacy features (Skills / Memory / Cron) ----
     // These call the REST endpoints on the Dashboard. If the Dashboard doesn't
     // expose them, they'll return http-404 errors.
 
@@ -365,7 +366,7 @@ class HermesApi(private val baseUrl: String) {
     }
 }
 
-// ── Response models ──
+// ---- Response models ----
 
 data class TranscribeResponse(
     val ok: Boolean,
