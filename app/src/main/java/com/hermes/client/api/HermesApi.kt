@@ -1,6 +1,8 @@
 package com.hermes.client.api
 
 import com.hermes.client.model.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -57,14 +59,16 @@ class HermesApi(private val baseUrl: String) {
     // ---- Health / Reachability ----
 
     suspend fun healthCheck(): Result<Boolean> {
-        return try {
-            val req = Request.Builder()
-                .url("$baseUrl/health")
-                .build()
-            val response = restClient.newCall(req).execute()
-            Result.success(response.isSuccessful)
-        } catch (e: Exception) {
-            Result.failure(e)
+        return withContext(Dispatchers.IO) {
+            try {
+                val req = Request.Builder()
+                    .url("$baseUrl/health")
+                    .build()
+                val response = restClient.newCall(req).execute()
+                Result.success(response.isSuccessful)
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
         }
     }
 
@@ -97,8 +101,9 @@ class HermesApi(private val baseUrl: String) {
     // ---- Sessions (REST + Gateway) ----
 
     suspend fun getSessions(): Result<List<SessionInfo>> {
-        return try {
-            val req = Request.Builder()
+        return withContext(Dispatchers.IO) {
+            try {
+                val req = Request.Builder()
                 .url("$baseUrl/api/sessions")
                 .build()
             val response = restClient.newCall(req).execute()
@@ -208,8 +213,9 @@ class HermesApi(private val baseUrl: String) {
     // ---- REST audio endpoints ----
 
     suspend fun transcribeAudio(dataUrl: String): Result<TranscribeResponse> {
-        return try {
-            val json = JSONObject().apply {
+        return withContext(Dispatchers.IO) {
+            try {
+                val json = JSONObject().apply {
                 put("data_url", dataUrl)
                 put("mime_type", "audio/ogg")
             }
@@ -236,8 +242,9 @@ class HermesApi(private val baseUrl: String) {
     }
 
     suspend fun speakAudio(text: String): Result<SpeakResponse> {
-        return try {
-            val json = JSONObject().apply { put("text", text) }
+        return withContext(Dispatchers.IO) {
+            try {
+                val json = JSONObject().apply { put("text", text) }
             val body = json.toString().toRequestBody("application/json".toMediaType())
             val req = Request.Builder()
                 .url("$baseUrl/api/audio/speak")
@@ -266,8 +273,9 @@ class HermesApi(private val baseUrl: String) {
     // expose them, they'll return http-404 errors.
 
     suspend fun getSkills(category: String? = null, installed: Boolean? = null): Result<List<Skill>> {
-        return try {
-            var url = "$baseUrl/skills"
+        return withContext(Dispatchers.IO) {
+            try {
+                var url = "$baseUrl/skills"
             val params = mutableListOf<String>()
             category?.let { params.add("category=$it") }
             installed?.let { params.add("installed=$it") }
@@ -298,8 +306,9 @@ class HermesApi(private val baseUrl: String) {
     }
 
     suspend fun getSkillCategories(): Result<List<SkillCategory>> {
-        return try {
-            val req = Request.Builder().url("$baseUrl/skills/categories").build()
+        return withContext(Dispatchers.IO) {
+            try {
+                val req = Request.Builder().url("$baseUrl/skills/categories").build()
             val response = restClient.newCall(req).execute()
             if (!response.isSuccessful) return Result.failure(IOException("HTTP ${response.code}"))
             val json = JSONObject(response.body?.string() ?: "{}")

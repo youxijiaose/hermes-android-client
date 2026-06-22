@@ -1,7 +1,9 @@
 package com.hermes.client.api
 
 import com.hermes.client.model.*
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
 import okhttp3.*
 import org.json.JSONObject
 import java.io.IOException
@@ -54,7 +56,9 @@ class GatewayClient {
         if (_state == State.Open || _state == State.Connecting) return
         setState(State.Connecting)
 
-        val resolvedToken = token ?: fetchToken(host)
+        val resolvedToken = withContext(Dispatchers.IO) {
+            token ?: fetchToken(host)
+        }
         if (resolvedToken.isNullOrEmpty()) {
             setState(State.Error)
             throw IOException("No session token available — visit $host in a browser first")
