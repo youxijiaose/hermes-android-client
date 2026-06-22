@@ -2,6 +2,7 @@ package com.hermes.client.ui
 
 import android.os.Bundle
 import android.view.View
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -87,15 +88,14 @@ class CronActivity : AppCompatActivity() {
         layout.addView(promptInput)
 
         builder.setView(layout)
-        builder.setPositiveButton("Create") { dialog, _ ->
+        builder.setPositiveButton("Create") { _: android.content.DialogInterface, _: Int ->
             val schedule = scheduleInput.text.toString().trim()
             val prompt = promptInput.text.toString().trim()
             if (schedule.isNotEmpty() && prompt.isNotEmpty()) {
                 viewModel.createJob(schedule, prompt, nameInput.text.toString().trim().takeIf { it.isNotEmpty() })
             }
-            dialog.dismiss()
         }
-        builder.setNegativeButton("Cancel") { dialog, _ -> dialog.dismiss() }
+        builder.setNegativeButton("Cancel") { _: android.content.DialogInterface, _: Int -> }
 
         if (!isFinishing) builder.show()
     }
@@ -129,16 +129,15 @@ class CronActivity : AppCompatActivity() {
         layout.addView(promptInput)
 
         builder.setView(layout)
-        builder.setPositiveButton("Save") { dialog, _ ->
-            dialog.dismiss()
-            // For now, create a new job with updated params and delete old one
+        builder.setPositiveButton("Save") { _: android.content.DialogInterface, _: Int ->
+            // For now, create a new job with updated params
             val schedule = scheduleInput.text.toString().trim()
             val prompt = promptInput.text.toString().trim()
             if (schedule.isNotEmpty() && prompt.isNotEmpty()) {
                 viewModel.createJob(schedule, prompt, nameInput.text.toString().trim().takeIf { it.isNotEmpty() })
             }
         }
-        builder.setNegativeButton("Cancel") { dialog, _ -> dialog.dismiss() }
+        builder.setNegativeButton("Cancel") { _: android.content.DialogInterface, _: Int -> }
 
         if (!isFinishing) builder.show()
     }
@@ -148,7 +147,7 @@ class CronActivity : AppCompatActivity() {
         AlertDialog.Builder(this)
             .setTitle("Delete Cron Job")
             .setMessage("Are you sure you want to delete \"${job.name ?: job.id}\"?")
-            .setPositiveButton("Delete") { _, _ ->
+            .setPositiveButton("Delete") { _: android.content.DialogInterface, _: Int ->
                 viewModel.deleteJob(job.id)
             }
             .setNegativeButton("Cancel", null)
