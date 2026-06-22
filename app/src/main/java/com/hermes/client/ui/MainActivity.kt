@@ -288,7 +288,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        viewModel.reconnect()
+        // Don't auto-reconnect on resume to avoid reconnection storms
     }
 
     override fun onDestroy() {
