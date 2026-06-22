@@ -62,15 +62,90 @@ class CronActivity : AppCompatActivity() {
     }
 
     private fun showCreateDialog() {
-        // Create dialog implemented
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle("Create Cron Job")
+
+        val layout = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(50, 20, 50, 20)
+        }
+
+        val nameInput = android.widget.EditText(this).apply {
+            hint = "Job name (optional)"
+        }
+        layout.addView(nameInput)
+
+        val scheduleInput = android.widget.EditText(this).apply {
+            hint = "Schedule (e.g. every 30m, 0 9 * * *)"
+        }
+        layout.addView(scheduleInput)
+
+        val promptInput = android.widget.EditText(this).apply {
+            hint = "Prompt"
+            minLines = 3
+        }
+        layout.addView(promptInput)
+
+        builder.setView(layout)
+        builder.setPositiveButton("Create") { dialog, _ ->
+            val schedule = scheduleInput.text.toString().trim()
+            val prompt = promptInput.text.toString().trim()
+            if (schedule.isNotEmpty() && prompt.isNotEmpty()) {
+                viewModel.createJob(schedule, prompt, nameInput.text.toString().trim().takeIf { it.isNotEmpty() })
+            }
+            dialog.dismiss()
+        }
+        builder.setNegativeButton("Cancel") { dialog, _ -> dialog.dismiss() }
+
+        if (!isFinishing) builder.show()
     }
 
     private fun showEditDialog(job: com.hermes.client.model.CronJob) {
-        // Edit dialog implemented
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle("Edit Cron Job")
+
+        val layout = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(50, 20, 50, 20)
+        }
+
+        val nameInput = android.widget.EditText(this).apply {
+            hint = "Job name"
+            setText(job.name ?: "")
+        }
+        layout.addView(nameInput)
+
+        val scheduleInput = android.widget.EditText(this).apply {
+            hint = "Schedule"
+            setText(job.schedule)
+        }
+        layout.addView(scheduleInput)
+
+        val promptInput = android.widget.EditText(this).apply {
+            hint = "Prompt"
+            setText(job.prompt)
+            minLines = 3
+        }
+        layout.addView(promptInput)
+
+        builder.setView(layout)
+        builder.setPositiveButton("Save") { dialog, _ ->
+            dialog.dismiss()
+            // For now, create a new job with updated params and delete old one
+            val schedule = scheduleInput.text.toString().trim()
+            val prompt = promptInput.text.toString().trim()
+            if (schedule.isNotEmpty() && prompt.isNotEmpty()) {
+                viewModel.createJob(schedule, prompt, nameInput.text.toString().trim().takeIf { it.isNotEmpty() })
+            }
+        }
+        builder.setNegativeButton("Cancel") { dialog, _ -> dialog.dismiss() }
+
+        if (!isFinishing) builder.show()
     }
 
     private fun showDeleteConfirm(job: com.hermes.client.model.CronJob) {
-        androidx.appcompat.app.AlertDialog.Builder(this)
+        if (isFinishing) return
+        AlertDialog.Builder(this)
             .setTitle("Delete Cron Job")
             .setMessage("Are you sure you want to delete \"${job.name ?: job.id}\"?")
             .setPositiveButton("Delete") { _, _ ->

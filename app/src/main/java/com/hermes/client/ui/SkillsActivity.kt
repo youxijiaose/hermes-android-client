@@ -44,8 +44,17 @@ class SkillsActivity : AppCompatActivity() {
             adapter = adapter
         }
 
-        // Search functionality (stub)
-        // binding.searchView.setOnQueryTextListener(...)
+        // Search functionality
+        binding.searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String?): Boolean {
+                query?.let { viewModel.searchSkills(it) }
+                return true
+            }
+            override fun onQueryTextChange(newText: String?): Boolean {
+                viewModel.searchSkills(newText ?: "")
+                return true
+            }
+        })
 
         // Category filter
         viewModel.categories.observe(this) { categories ->
@@ -108,6 +117,7 @@ class SkillsActivity : AppCompatActivity() {
     }
 
     private fun showSkillDetails(skill: Skill) {
+        if (isFinishing) return
         val builder = AlertDialog.Builder(this)
         builder.setTitle(skill.name)
         

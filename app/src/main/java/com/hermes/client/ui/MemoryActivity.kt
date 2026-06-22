@@ -43,8 +43,17 @@ class MemoryActivity : AppCompatActivity() {
             adapter = adapter
         }
 
-        // Search functionality (stub)
-        // binding.searchView.setOnQueryTextListener(...)
+        // Search functionality
+        binding.searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String?): Boolean {
+                query?.let { viewModel.searchMemory(it) }
+                return true
+            }
+            override fun onQueryTextChange(newText: String?): Boolean {
+                viewModel.searchMemory(newText ?: "")
+                return true
+            }
+        })
 
         // Target switcher
         binding.btnUserTarget.setOnClickListener {
@@ -60,7 +69,6 @@ class MemoryActivity : AppCompatActivity() {
         binding.fabAdd.setOnClickListener {
             showCreateDialog()
         }
-
 
         viewModel.memoryEntries.observe(this) { entries ->
             adapter.submitList(entries)
@@ -96,75 +104,64 @@ class MemoryActivity : AppCompatActivity() {
     }
 
     private fun showCreateDialog() {
+        if (isFinishing) return
         val target = viewModel.selectedTarget.value ?: "memory"
-        val builder = AlertDialog.Builder(this)
-        builder.setTitle("Create Memory Entry")
-        
         val input = android.widget.EditText(this)
         input.hint = "Enter content..."
         input.setPadding(50, 0, 50, 0)
-        builder.setView(input)
-        
-        builder.setPositiveButton("Create") { dialog, _ ->
-            val content = input.text.toString().trim()
-            if (content.isNotEmpty()) {
-                viewModel.createMemory(content, target)
+        AlertDialog.Builder(this)
+            .setTitle("Create Memory Entry")
+            .setView(input)
+            .setPositiveButton("Create") { dialog, _ ->
+                val content = input.text.toString().trim()
+                if (content.isNotEmpty()) {
+                    viewModel.createMemory(content, target)
+                }
+                dialog.dismiss()
             }
-            dialog.dismiss()
-        }
-        
-        builder.setNegativeButton("Cancel") { dialog, _ ->
-            dialog.dismiss()
-        }
-        
-        builder.show()
+            .setNegativeButton("Cancel") { dialog, _ -> dialog.dismiss() }
+            .show()
     }
 
     private fun showEditDialog(entry: MemoryEntry) {
-        val builder = AlertDialog.Builder(this)
-        builder.setTitle("Edit Memory Entry")
-        
+        if (isFinishing) return
         val input = android.widget.EditText(this)
         input.setText(entry.content)
         input.setPadding(50, 0, 50, 0)
-        builder.setView(input)
-        
-        builder.setPositiveButton("Save") { dialog, _ ->
-            val content = input.text.toString().trim()
-            if (content.isNotEmpty()) {
-                viewModel.updateMemory(entry.id, content = content)
+        AlertDialog.Builder(this)
+            .setTitle("Edit Memory Entry")
+            .setView(input)
+            .setPositiveButton("Save") { dialog, _ ->
+                val content = input.text.toString().trim()
+                if (content.isNotEmpty()) {
+                    viewModel.updateMemory(entry.id, content = content)
+                }
+                dialog.dismiss()
             }
-            dialog.dismiss()
-        }
-        
-        builder.setNegativeButton("Cancel") { dialog, _ ->
-            dialog.dismiss()
-        }
-        
-        builder.show()
+            .setNegativeButton("Cancel") { dialog, _ -> dialog.dismiss() }
+            .show()
     }
 
     private fun showDetailsDialog(entry: MemoryEntry) {
-        val builder = AlertDialog.Builder(this)
-        builder.setTitle("Memory Entry Details")
-        
+        if (isFinishing) return
         val content = StringBuilder()
         content.append("ID: ${entry.id}\n\n")
         content.append("Target: ${entry.target}\n\n")
         content.append("Content:\n${entry.content}\n\n")
         content.append("Created: ${com.hermes.client.util.TimeUtils.formatFullTime(entry.created_at)}\n")
         content.append("Updated: ${com.hermes.client.util.TimeUtils.formatFullTime(entry.updated_at)}\n")
-        
         if (!entry.tags.isNullOrEmpty()) {
             content.append("\nTags: ${entry.tags.joinToString(", ")}")
         }
-        
-        builder.setMessage(content.toString())
-        builder.setPositiveButton("Close", null)
-        builder.show()
+        AlertDialog.Builder(this)
+            .setTitle("Memory Entry Details")
+            .setMessage(content.toString())
+            .setPositiveButton("Close", null)
+            .show()
     }
 
     private fun showDeleteConfirm(entry: MemoryEntry) {
+        if (isFinishing) return
         AlertDialog.Builder(this)
             .setTitle("Delete Memory Entry")
             .setMessage("Are you sure you want to delete this entry?\n\n${entry.content.take(100)}${if (entry.content.length > 100) "..." else ""}")
@@ -191,7 +188,6 @@ class MemoryActivity : AppCompatActivity() {
                     .setTitle("Clear All Memory")
                     .setMessage("Are you sure you want to delete ALL entries? This cannot be undone.")
                     .setPositiveButton("Clear All") { _, _ ->
-                        // Bulk delete feature
                         Toast.makeText(this, "Bulk delete will be implemented in future version", Toast.LENGTH_SHORT).show()
                     }
                     .setNegativeButton("Cancel", null)

@@ -13,6 +13,7 @@ import android.webkit.*
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AlertDialog
 import com.hermes.client.R
@@ -23,6 +24,22 @@ class BrowserActivity : AppCompatActivity() {
     private lateinit var binding: ActivityBrowserBinding
     private var currentUrl: String = "https://www.google.com"
     private var isPrivateMode = false
+    
+    // File chooser callback for WebView
+    private var filePathCallback: ValueCallback<Array<Uri>>? = null
+    
+    private val fileChooserLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK && result.data?.data != null) {
+            filePathCallback?.onReceiveValue(
+                WebChromeClient.FileChooserParams.parseResult(result.resultCode, result.data)
+            )
+        } else {
+            filePathCallback?.onReceiveValue(null)
+        }
+        filePathCallback = null
+    }
 
     private val webViewClient = object : WebViewClient() {
         override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
@@ -123,19 +140,17 @@ class BrowserActivity : AppCompatActivity() {
             filePathCallback: ValueCallback<Array<Uri>>?,
             fileChooserParams: FileChooserParams?
         ): Boolean {
-            // Handle file upload
-            val intent = Intent(Intent.ACTION_GET_CONTENT)
-            intent.type = "*/*"
-            startActivityForResult(
-                Intent.createChooser(intent, "Select File"),
-                FILE_CHOOSER_REQUEST
-            )
+            // Handle file upload using ActivityResultLauncher
+            this@BrowserActivity.filePathCallback = filePathCallback
+            val intent = fileChooserParams?.createIntent() ?: Intent(Intent.ACTION_GET_CONTENT).apply {
+                type = "*/*"
+            }
+            fileChooserLauncher.launch(intent)
             return true
         }
     }
 
     companion object {
-        private const val FILE_CHOOSER_REQUEST = 100
         private const val MENU_DOWNLOAD_IMAGE = 1
         private const val MENU_OPEN_IMAGE = 2
         private const val MENU_OPEN_LINK = 3
@@ -370,14 +385,6 @@ class BrowserActivity : AppCompatActivity() {
             }
             .setNegativeButton("Cancel", null)
             .show()
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == FILE_CHOOSER_REQUEST) {
-            // Handle file upload result
-            // Note: Full implementation requires ValueCallback handling
-        }
     }
 
     override fun onDestroy() {
