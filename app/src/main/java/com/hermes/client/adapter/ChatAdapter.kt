@@ -11,7 +11,6 @@ import androidx.recyclerview.widget.RecyclerView
 import com.hermes.client.R
 import com.hermes.client.model.Message
 
-
 import com.hermes.client.util.TimeUtils
 import com.hermes.client.util.setMarkdown
 
@@ -74,18 +73,27 @@ class ChatAdapter : ListAdapter<Message, RecyclerView.ViewHolder>(MessageDiffCal
         private val progressBar: ProgressBar = itemView.findViewById(R.id.progressTyping)
         private val thinkingBlock: android.widget.LinearLayout = itemView.findViewById(R.id.thinkingBlock)
 
+        // Cache last rendered content to skip redundant renders
+        private var lastContentHash: Int = 0
+
         init {
             // 添加思考块视图
         }
 
         fun bind(message: Message.AssistantMessage) {
+            val contentHash = message.content?.hashCode() ?: 0
+            
             if (message.content.isNullOrEmpty()) {
                 progressBar.visibility = View.VISIBLE
                 textView.visibility = View.GONE
             } else {
                 progressBar.visibility = View.GONE
                 textView.visibility = View.VISIBLE
-                textView.setMarkdown(message.content)
+                // Only re-render if content actually changed
+                if (contentHash != lastContentHash) {
+                    textView.setMarkdown(message.content)
+                    lastContentHash = contentHash
+                }
             }
             timeView.text = TimeUtils.formatRelativeTime(itemView.context, message.timestamp)
             
@@ -112,7 +120,12 @@ class ChatAdapter : ListAdapter<Message, RecyclerView.ViewHolder>(MessageDiffCal
 
 class MessageDiffCallback : DiffUtil.ItemCallback<Message>() {
     override fun areItemsTheSame(oldItem: Message, newItem: Message): Boolean {
-        return oldItem === newItem
+        // Compare by content hash + role + timestamp for stable identity
+        // This prevents full re-layout on every delta since the data class
+        // instances are different objects even when content hasn't changed.
+        return oldItem::class == newItem::class &&
+                oldItem.content == newItem.content &&
+                oldItem.timestamp == newItem.timestamp
     }
 
     override fun areContentsTheSame(oldItem: Message, newItem: Message): Boolean {

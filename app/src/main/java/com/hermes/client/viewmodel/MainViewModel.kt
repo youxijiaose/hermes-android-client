@@ -199,9 +199,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 val index = streamingAssistantIndex
                 if (index >= 0 && index < messages.size && messages[index] is Message.AssistantMessage) {
                     val msg = messages[index] as Message.AssistantMessage
-                    val updatedMsg = msg.copy(thinking = (msg.thinking ?: "") + text)
-                    messages[index] = updatedMsg
-                    _messages.postValue(messages)
+                    val newThinking = (msg.thinking ?: "") + text
+                    // Only update if thinking content actually changed
+                    if (newThinking != msg.thinking) {
+                        val updatedMsg = msg.copy(thinking = newThinking)
+                        messages[index] = updatedMsg
+                        _messages.postValue(messages)
+                    }
                 }
             }
         } catch (e: Exception) {
@@ -294,8 +298,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val index = streamingAssistantIndex
         if (index >= 0 && index < messages.size && messages[index] is Message.AssistantMessage) {
             val msg = messages[index] as Message.AssistantMessage
-            messages[index] = msg.copy(content = (msg.content ?: "") + delta)
-            _messages.postValue(messages)
+            val newContent = (msg.content ?: "") + delta
+            // Only update if content actually changed to avoid unnecessary LiveData emissions
+            if (newContent != msg.content) {
+                messages[index] = msg.copy(content = newContent)
+                _messages.postValue(messages)
+            }
         }
     }
 
