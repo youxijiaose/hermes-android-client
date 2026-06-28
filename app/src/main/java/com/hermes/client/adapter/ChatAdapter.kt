@@ -20,6 +20,7 @@ class ChatAdapter : ListAdapter<Message, RecyclerView.ViewHolder>(MessageDiffCal
         private const val VIEW_TYPE_USER = 1
         private const val VIEW_TYPE_ASSISTANT = 2
         private const val VIEW_TYPE_TOOL = 3
+        private const val VIEW_TYPE_SYSTEM = 4
     }
 
     override fun getItemViewType(position: Int): Int {
@@ -27,7 +28,7 @@ class ChatAdapter : ListAdapter<Message, RecyclerView.ViewHolder>(MessageDiffCal
             is Message.UserMessage -> VIEW_TYPE_USER
             is Message.AssistantMessage -> VIEW_TYPE_ASSISTANT
             is Message.ToolMessage -> VIEW_TYPE_TOOL
-            else -> VIEW_TYPE_ASSISTANT
+            is Message.SystemMessage -> VIEW_TYPE_SYSTEM
         }
     }
 
@@ -38,6 +39,9 @@ class ChatAdapter : ListAdapter<Message, RecyclerView.ViewHolder>(MessageDiffCal
             )
             VIEW_TYPE_TOOL -> ToolViewHolder(
                 LayoutInflater.from(parent.context).inflate(R.layout.item_message_tool, parent, false)
+            )
+            VIEW_TYPE_SYSTEM -> SystemViewHolder(
+                LayoutInflater.from(parent.context).inflate(R.layout.item_message_system, parent, false)
             )
             else -> AssistantViewHolder(
                 LayoutInflater.from(parent.context).inflate(R.layout.item_message_assistant, parent, false)
@@ -50,16 +54,13 @@ class ChatAdapter : ListAdapter<Message, RecyclerView.ViewHolder>(MessageDiffCal
             is UserViewHolder -> holder.bind(getItem(position) as Message.UserMessage)
             is AssistantViewHolder -> holder.bind(getItem(position) as Message.AssistantMessage)
             is ToolViewHolder -> holder.bind(getItem(position) as Message.ToolMessage)
+            is SystemViewHolder -> holder.bind(getItem(position) as Message.SystemMessage)
         }
     }
 
     class UserViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val textView: TextView = itemView.findViewById(R.id.textMessage)
         private val timeView: TextView = itemView.findViewById(R.id.timeMessage)
-
-        init {
-            // 添加时间视图到布局（需要修改布局文件）
-        }
 
         fun bind(message: Message.UserMessage) {
             textView.setMarkdown(message.content ?: "")
@@ -76,13 +77,9 @@ class ChatAdapter : ListAdapter<Message, RecyclerView.ViewHolder>(MessageDiffCal
         // Cache last rendered content to skip redundant renders
         private var lastContentHash: Int = 0
 
-        init {
-            // 添加思考块视图
-        }
-
         fun bind(message: Message.AssistantMessage) {
             val contentHash = message.content?.hashCode() ?: 0
-            
+
             if (message.content.isNullOrEmpty()) {
                 progressBar.visibility = View.VISIBLE
                 textView.visibility = View.GONE
@@ -96,10 +93,9 @@ class ChatAdapter : ListAdapter<Message, RecyclerView.ViewHolder>(MessageDiffCal
                 }
             }
             timeView.text = TimeUtils.formatRelativeTime(itemView.context, message.timestamp)
-            
+
             // 显示思考块（如果有）
             thinkingBlock.visibility = if (message.thinking?.isNotEmpty() == true) View.VISIBLE else View.GONE
-            // 更新思考内容
             val thinkingText = itemView.findViewById<android.widget.TextView>(R.id.textThinking)
             thinkingText?.text = message.thinking
         }
@@ -116,13 +112,18 @@ class ChatAdapter : ListAdapter<Message, RecyclerView.ViewHolder>(MessageDiffCal
             timeView.text = TimeUtils.formatRelativeTime(itemView.context, message.timestamp)
         }
     }
+
+    class SystemViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        private val textView: TextView = itemView.findViewById(R.id.textSystem)
+
+        fun bind(message: Message.SystemMessage) {
+            textView.text = message.content
+        }
+    }
 }
 
 class MessageDiffCallback : DiffUtil.ItemCallback<Message>() {
     override fun areItemsTheSame(oldItem: Message, newItem: Message): Boolean {
-        // Compare by content hash + role + timestamp for stable identity
-        // This prevents full re-layout on every delta since the data class
-        // instances are different objects even when content hasn't changed.
         return oldItem::class == newItem::class &&
                 oldItem.content == newItem.content &&
                 oldItem.timestamp == newItem.timestamp
