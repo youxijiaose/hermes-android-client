@@ -68,8 +68,8 @@ A native Android client for Hermes Agent API Server with full-featured chat, voi
 ## 🔧 Configuration
 
 ### Server Settings
-- **Server URL**: `http://<your-termux-ip>:8080`
-- **API Key**: Set in Hermes API Server config
+- **Server URL**: `http://127.0.0.1:9119` (Hermes Dashboard, must be running in Termux)
+- **API Key**: Not needed (auto-discovered from Dashboard session token)
 
 ### Permissions Required
 - `INTERNET` - Network access

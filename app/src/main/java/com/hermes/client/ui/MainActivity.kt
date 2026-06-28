@@ -67,6 +67,9 @@ class MainActivity : AppCompatActivity() {
             setupHelpers()
             setupObservers()
 
+            // Auto-connect on startup
+            viewModel.reconnect()
+
             CrashLogWriter.writeLog(this, "ON_CREATE_SUCCESS", "MainActivity created successfully")
         } catch (e: Exception) {
             CrashLogWriter.writeCrashLog(this, "ON_CREATE_EXCEPTION", e)
