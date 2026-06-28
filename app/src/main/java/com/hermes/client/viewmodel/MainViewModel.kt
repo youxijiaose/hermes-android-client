@@ -149,11 +149,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             return
         }
 
-        val messages = _messages.value ?: mutableListOf()
-        messages.add(Message.UserMessage(content = content))
-        streamingAssistantIndex = messages.size
-        messages.add(Message.AssistantMessage(content = ""))
-        _messages.value = messages
+        val current = _messages.value ?: mutableListOf()
+        val next = current.toMutableList()
+        next.add(Message.UserMessage(content = content))
+        streamingAssistantIndex = next.size
+        next.add(Message.AssistantMessage(content = ""))
+        _messages.value = next
         _isStreaming.value = true
 
         viewModelScope.launch {
@@ -195,18 +196,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             val json = JSONObject(payload)
             val text = json.optString("text", "")
             if (text.isNotEmpty()) {
-                val messages = _messages.value ?: return
+                val current = _messages.value ?: return
                 val index = streamingAssistantIndex
-                if (index >= 0 && index < messages.size && messages[index] is Message.AssistantMessage) {
-                    val msg = messages[index] as Message.AssistantMessage
-                    val newThinking = (msg.thinking ?: "") + text
-                    // Only update if thinking content actually changed
-                    if (newThinking != msg.thinking) {
-                        val updatedMsg = msg.copy(thinking = newThinking)
-                        messages[index] = updatedMsg
-                        _messages.postValue(messages)
-                    }
-                }
+                if (index < 0 || index >= current.size) return
+                val msg = current[index]
+                if (msg !is Message.AssistantMessage) return
+                val newThinking = (msg.thinking ?: "") + text
+                if (newThinking == msg.thinking) return
+                val copy = current.toMutableList()
+                copy[index] = msg.copy(thinking = newThinking)
+                _messages.postValue(copy)
             }
         } catch (e: Exception) {
             Log.e(TAG, "parse thinking.delta", e)
@@ -218,9 +217,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         try {
             val json = JSONObject(payload)
             val toolName = json.optString("name", "tool")
-            val messages = _messages.value ?: return
-            messages.add(Message.ToolMessage(content = "Running: $toolName...", toolName = toolName))
-            _messages.postValue(messages)
+            val current = _messages.value ?: return
+            val copy = current.toMutableList()
+            copy.add(Message.ToolMessage(content = "Running: $toolName...", toolName = toolName))
+            _messages.postValue(copy)
         } catch (e: Exception) {
             Log.e(TAG, "parse tool.start", e)
         }
@@ -232,14 +232,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             val json = JSONObject(payload)
             val toolName = json.optString("name", "tool")
             val result = json.optString("result", "")
-            val messages = _messages.value ?: return
-            val toolMsgIndex = messages.indexOfLast { it is Message.ToolMessage }
+            val current = _messages.value ?: return
+            val copy = current.toMutableList()
+            val toolMsgIndex = copy.indexOfLast { it is Message.ToolMessage }
             if (toolMsgIndex >= 0) {
-                messages[toolMsgIndex] = Message.ToolMessage(
+                copy[toolMsgIndex] = Message.ToolMessage(
                     content = "Done: $toolName: ${result.take(200)}${if (result.length > 200) "..." else ""}",
                     toolName = toolName
                 )
-                _messages.postValue(messages)
+                _messages.postValue(copy)
             }
         } catch (e: Exception) {
             Log.e(TAG, "parse tool.complete", e)
@@ -294,23 +295,24 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun updateAssistantContent(delta: String) {
-        val messages = _messages.value ?: return
+        val current = _messages.value ?: return
         val index = streamingAssistantIndex
-        if (index >= 0 && index < messages.size && messages[index] is Message.AssistantMessage) {
-            val msg = messages[index] as Message.AssistantMessage
-            val newContent = (msg.content ?: "") + delta
-            // Only update if content actually changed to avoid unnecessary LiveData emissions
-            if (newContent != msg.content) {
-                messages[index] = msg.copy(content = newContent)
-                _messages.postValue(messages)
-            }
-        }
+        if (index < 0 || index >= current.size) return
+        val msg = current[index]
+        if (msg !is Message.AssistantMessage) return
+        val newContent = (msg.content ?: "") + delta
+        if (newContent == msg.content) return
+        val updated = msg.copy(content = newContent)
+        val copy = current.toMutableList()
+        copy[index] = updated
+        _messages.postValue(copy)
     }
 
     private fun addSystemMessage(content: String) {
-        val messages = _messages.value ?: mutableListOf()
-        messages.add(Message.SystemMessage(content = content))
-        _messages.value = messages
+        val current = _messages.value ?: mutableListOf()
+        val copy = current.toMutableList()
+        copy.add(Message.SystemMessage(content = content))
+        _messages.value = copy
     }
 
     fun clearChat() {
